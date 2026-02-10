@@ -34,7 +34,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                 if (types.isEmpty) return const Text('No room types found');
 
                 return DropdownButtonFormField<String>(
-                  value: _selectedRoomTypeId,
+                  initialValue: _selectedRoomTypeId,
                   decoration: const InputDecoration(
                     labelText: 'Select Room Type',
                     border: OutlineInputBorder(),
