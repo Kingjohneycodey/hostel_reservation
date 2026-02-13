@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:go_router/go_router.dart';
+
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/hostel_list_screen.dart';
 import 'screens/hostel_detail_screen.dart';
 import 'screens/room_selection_screen.dart';
 
+import 'features/cancel_reservation/cancel_demo_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Run the seeding function immediately when the app starts
-  // await seedHostelData();
 
   runApp(const MyApp());
 }
@@ -38,6 +38,12 @@ final _router = GoRouter(
         final id = state.pathParameters['id']!;
         return RoomSelectionScreen(hostelId: id);
       },
+    ),
+
+    //(Cancel Reservation Demo)
+    GoRoute(
+      path: '/cancel-demo',
+      builder: (context, state) => const CancelDemoScreen(),
     ),
   ],
 );

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import 'cancel_button.dart';
@@ -16,27 +15,99 @@ class CancelDemoScreen extends StatefulWidget {
 }
 
 class _CancelDemoScreenState extends State<CancelDemoScreen> {
-  late Booking booking;
+  // Demo booking (later you will replace with Firebase data)
+  late ReservationModel reservation;
+
   Timer? _timer;
+  Duration timeLeft = Duration.zero;
+
+  bool isCancelling = false;
 
   @override
   void initState() {
     super.initState();
 
-    // DEMO booking data (later can come from Firebase)
-    booking = Booking(
-      bookingId: 'BOOKING_001',
-      hostelName: 'Tensai Hostel (Block A)',
-      roomName: 'Room 12',
-      bookedAt: DateTime.now(),
-      cancelDeadline: DateTime.now().add(const Duration(days: 3)),
-      status: BookingStatus.active,
+    // Demo: booked 1 day ago (so cancel is still allowed)
+    final bookedAt = DateTime.now().subtract(const Duration(days: 1));
+
+    reservation = ReservationModel(
+      bookingId: "BOOKING_001",
+      hostelName: "Happy Stay Hostel",
+      hostelBlock: "Block A",
+      roomName: "Room 101 (Single Room)",
+      bookedAt: bookedAt,
+      status: ReservationStatus.active,
+      imageUrl:
+          "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1200",
     );
 
-    // This timer refreshes the "time left" every second
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    _updateTimeLeft();
+
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
+      _updateTimeLeft();
     });
+  }
+
+  void _updateTimeLeft() {
+    final deadline = CancelUtils.cancelDeadline(reservation.bookedAt);
+
+    final now = DateTime.now();
+    final diff = deadline.difference(now);
+
+    setState(() {
+      timeLeft = diff.isNegative ? Duration.zero : diff;
+    });
+  }
+
+  bool get canCancel {
+    return CancelUtils.canCancel(reservation.bookedAt);
+  }
+
+  Future<void> _onCancelPressed() async {
+    if (!canCancel || isCancelling) return;
+
+    final confirm = await CancelDialog.showConfirmDialog(
+      context,
+      hostelName: reservation.hostelName,
+      roomName: reservation.roomName,
+    );
+
+    if (confirm != true) return;
+
+    setState(() => isCancelling = true);
+
+    try {
+      // Uses your cancel_service.dart
+      await CancelService.cancelReservation(
+        bookingId: reservation.bookingId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        reservation = reservation.copyWith(status: ReservationStatus.cancelled);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Reservation cancelled successfully."),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Cancel failed: $e"),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => isCancelling = false);
+    }
   }
 
   @override
@@ -45,183 +116,205 @@ class _CancelDemoScreenState extends State<CancelDemoScreen> {
     super.dispose();
   }
 
-  Future<void> _handleCancelPressed() async {
-    // 1) First check if cancellation is allowed
-    final bool allowed = CancelUtils.canCancel(booking);
-
-    if (!allowed) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cancellation time has passed.'),
-        ),
-      );
-      return;
-    }
-
-    // 2) Show confirmation dialog (from cancel_dialog.dart)
-    final bool confirmed = await showCancelDialog(context);
-
-    if (!confirmed) return;
-
-    // 3) Call service (from cancel_service.dart)
-    final bool success = await CancelService.cancelBooking(booking.bookingId);
-
-    if (!mounted) return;
-
-    if (success) {
-      setState(() {
-        booking = booking.copyWith(status: BookingStatus.cancelled);
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reservation cancelled successfully!'),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to cancel. Try again.'),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bool canCancel = CancelUtils.canCancel(booking);
-    final Duration timeLeft = CancelUtils.timeLeft(booking);
+    final isCancelled = reservation.status == ReservationStatus.cancelled;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cancel Reservation (Demo)'),
-        centerTitle: true,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _BookingCard(
-            booking: booking,
-            canCancel: canCancel,
-            timeLeft: timeLeft,
-            onCancelPressed: _handleCancelPressed,
-          ),
-          const SizedBox(height: 16),
-          _NoteCard(),
-        ],
-      ),
-    );
-  }
-}
-
-class _BookingCard extends StatelessWidget {
-  final Booking booking;
-  final bool canCancel;
-  final Duration timeLeft;
-  final VoidCallback onCancelPressed;
-
-  const _BookingCard({
-    required this.booking,
-    required this.canCancel,
-    required this.timeLeft,
-    required this.onCancelPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final String statusText = CancelUtils.statusText(booking.status);
-    final Color statusColor = CancelUtils.statusColor(booking.status);
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 18,
-            color: Colors.black.withOpacity(0.05),
-            offset: const Offset(0, 8),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            booking.hostelName,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
+        title: const Text("User Dashboard"),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Image.network(
+                  "https://upload.wikimedia.org/wikipedia/commons/5/5c/University_logo_example.png",
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.school, color: Colors.green),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            booking.roomName,
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 16),
-
-          _InfoRow(
-            label: "Booking ID",
-            value: booking.bookingId,
-          ),
-          const SizedBox(height: 8),
-
-          _InfoRow(
-            label: "Booked At",
-            value: CancelUtils.formatDateTime(booking.bookedAt),
-          ),
-          const SizedBox(height: 8),
-
-          _InfoRow(
-            label: "Cancel Deadline",
-            value: CancelUtils.formatDateTime(booking.cancelDeadline),
-          ),
-          const SizedBox(height: 16),
-
-          Row(
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        children: [
+          // Profile top
+          Column(
             children: [
+              const SizedBox(height: 10),
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.green,
+                child: CircleAvatar(
+                  radius: 46,
+                  backgroundImage: NetworkImage(
+                    "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?w=600",
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               const Text(
-                "Status:",
-                style: TextStyle(fontWeight: FontWeight.w700),
+                "Jane Doe",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
               ),
-              const SizedBox(width: 8),
-              Text(
-                statusText,
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: statusColor,
-                ),
+              const SizedBox(height: 2),
+              const Text(
+                "janedoe@gmail.com",
+                style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
               ),
+              const SizedBox(height: 2),
+              const Text(
+                "08012345678",
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 22),
             ],
           ),
 
-          const SizedBox(height: 14),
+          // Booked Rooms title
+          const Text(
+            "Booked Rooms",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.green,
+            ),
+          ),
+          const SizedBox(height: 10),
 
-          Row(
-            children: [
-              const Icon(Icons.timer_outlined, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                "Time left: ${CancelUtils.formatDuration(timeLeft)}",
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          // Hostel image card
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Stack(
+              children: [
+                SizedBox(
+                  height: 190,
+                  width: double.infinity,
+                  child: Image.network(
+                    reservation.imageUrl,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-            ],
+
+                // left + right arrows
+                Positioned(
+                  left: 10,
+                  top: 80,
+                  child: _ArrowButton(icon: Icons.chevron_left),
+                ),
+                Positioned(
+                  right: 10,
+                  top: 80,
+                  child: _ArrowButton(icon: Icons.chevron_right),
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(height: 22),
+          const SizedBox(height: 12),
 
-          // ✅ This button comes from cancel_button.dart
-          CancelButton(
-            enabled: canCancel && booking.status == BookingStatus.active,
-            onPressed: onCancelPressed,
+          // Green booking info card
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.green,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                // Left text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        reservation.hostelName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        reservation.roomName,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Right cancel button + timer
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    CancelButton(
+                      enabled: canCancel && !isCancelled,
+                      isLoading: isCancelling,
+                      onPressed: _onCancelPressed,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      isCancelled
+                          ? "Cancelled"
+                          : canCancel
+                              ? "${CancelUtils.formatDuration(timeLeft)} left"
+                              : "Cancel expired",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withOpacity(0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // Order history
+          const Text(
+            "Order History",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.green,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "Placed an Order for ${reservation.roomName} in ${reservation.hostelName}",
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    "View More",
+                    style: TextStyle(color: Colors.green),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -229,57 +322,16 @@ class _BookingCard extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({
-    required this.label,
-    required this.value,
-  });
+class _ArrowButton extends StatelessWidget {
+  final IconData icon;
+  const _ArrowButton({required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "$label:",
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 15),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _NoteCard extends StatelessWidget {
-  const _NoteCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Text(
-        "NOTE: This is a demo screen.\n"
-        "Change bookedAt in code to test the 3-day cancellation rule.",
-        style: TextStyle(
-          fontSize: 14,
-          height: 1.4,
-        ),
-      ),
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: Colors.white.withOpacity(0.7),
+      child: Icon(icon, color: Colors.black),
     );
   }
 }
