@@ -68,7 +68,7 @@ class HostelListScreen extends StatelessWidget {
                       else
                         Container(
                           height: 200,
-                          color: Theme.of(context).colorScheme.surfaceVariant,
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           child: Icon(
                             Icons.hotel,
                             size: 50,
