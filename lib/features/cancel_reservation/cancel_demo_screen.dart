@@ -68,47 +68,50 @@ class _CancelDemoScreenState extends State<CancelDemoScreen> {
   }
 
   Future<void> _onCancelPressed() async {
-    if (!canCancel || isCancelling) return;
+  if (!canCancel || isCancelling) return;
 
-    final confirm = await CancelDialog.showConfirmDialog(
-      context,
-      hostelName: reservation.hostelName,
-      roomName: reservation.roomName,
-    );
+  // Show our new dialog
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return CancelReservationDialog(
+        onConfirmCancel: () async {
+          // This runs when user clicks "Yes, Cancel Reservation"
+          setState(() => isCancelling = true);
 
-    if (confirm != true) return;
+          try {
+            await CancelService.cancelReservation(
+              bookingId: reservation.bookingId,
+            );
 
-    setState(() => isCancelling = true);
+            if (!mounted) return;
 
-    try {
-      // Uses your cancel_service.dart
-      await CancelService.cancelReservation(
-        bookingId: reservation.bookingId,
+            setState(() {
+              reservation = reservation.copyWith(status: ReservationStatus.cancelled);
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Reservation cancelled successfully."),
+              ),
+            );
+          } catch (e) {
+            if (!mounted) return;
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Cancel failed: $e"),
+              ),
+            );
+          } finally {
+            if (mounted) setState(() => isCancelling = false);
+          }
+        },
       );
-
-      if (!mounted) return;
-
-      setState(() {
-        reservation = reservation.copyWith(status: ReservationStatus.cancelled);
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Reservation cancelled successfully."),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Cancel failed: $e"),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => isCancelling = false);
-    }
-  }
+    },
+  );
+}
 
   @override
   void dispose() {
