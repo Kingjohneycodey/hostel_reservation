@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hostel_reservation/app_theme.dart';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const _kGreen = Color(0xFF2E7D32);
-const _kGreenLight = Color(0xFF66BB6A);
+// ─── Derived palette from AppTheme ───────────────────────────────────────────
+// Primary  : AppTheme.primaryColor  = Color(0xFF008000)  – FUTO Green
+// Light    : _kGreenLight           = Color(0xFF4CAF50)  – lighter accent
+// Pale bg  : _kGreenPale            = Color(0xFFE8F5E9)  – tinted background
+// Dark bg  : AppTheme.backgroundDark                     – deep header gradient start
+// Surface  : AppTheme.surfaceLight  = Colors.white
+// BG       : AppTheme.backgroundLight                    – scaffold bg
+const _kGreenLight = Color(0xFF4CAF50);
 const _kGreenPale = Color(0xFFE8F5E9);
 const _kGreyText = Color(0xFF757575);
 const _kDark = Color(0xFF1A1A1A);
@@ -40,6 +45,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
   User? get _user => _auth.currentUser;
 
+  // ── Logout ──────────────────────────────────────────────────────────────────
+
   Future<void> _logout() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -72,14 +79,16 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
     if (confirmed == true) {
       await _auth.signOut();
-      if (mounted) context.go('/signin'); // adjust route as needed
+      if (mounted) context.go('/signin');
     }
   }
+
+  // ── Build ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F8F5),
+      backgroundColor: AppTheme.backgroundLight,
       body: StreamBuilder<DocumentSnapshot>(
         stream: _user != null
             ? _firestore.collection('users').doc(_user!.uid).snapshots()
@@ -116,24 +125,25 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Sliver App Bar / Header ─────────────────────────────────────────────────
+  // ── Sliver App Bar / Header ──────────────────────────────────────────────────
 
   SliverAppBar _buildAppBar(Map<String, dynamic>? userData) {
-    final displayName = userData?['name'] ?? _user?.displayName ?? 'User';
-    final email = userData?['email'] ?? _user?.email ?? 'useremail';
+    final displayName = userData?['name'] ?? _user?.displayName ?? 'User Name';
+    final email = userData?['email'] ?? _user?.email ?? '';
     final photoUrl = userData?['avatarUrl'] ?? _user?.photoURL;
 
     return SliverAppBar(
       expandedHeight: 160,
       pinned: true,
-      backgroundColor: _kGreen,
+      backgroundColor: AppTheme.primaryColor,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF1B5E20), Color(0xFF43A047)],
+              // Uses AppTheme.backgroundDark for the deep end of the gradient
+              colors: [AppTheme.backgroundDark, AppTheme.primaryColor],
             ),
           ),
           child: SafeArea(
@@ -228,7 +238,10 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                           decoration: BoxDecoration(
                             color: Colors.redAccent,
                             shape: BoxShape.circle,
-                            border: Border.all(color: _kGreen, width: 1.5),
+                            border: Border.all(
+                              color: AppTheme.primaryColor,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
@@ -243,13 +256,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Tab Bar ─────────────────────────────────────────────────────────────────
+  // ── Tab Bar ──────────────────────────────────────────────────────────────────
 
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -262,7 +275,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          color: _kGreen,
+          color: AppTheme.primaryColor,
           borderRadius: BorderRadius.circular(10),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
@@ -280,7 +293,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Tab Content ─────────────────────────────────────────────────────────────
+  // ── Tab Content ──────────────────────────────────────────────────────────────
 
   Widget _buildTabContent(Map<String, dynamic>? userData) {
     return AnimatedBuilder(
@@ -299,7 +312,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Transaction Section ─────────────────────────────────────────────────────
+  // ── Transaction Section ──────────────────────────────────────────────────────
 
   Widget _buildTransactionSection() {
     return Padding(
@@ -325,16 +338,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               if (snap.connectionState == ConnectionState.waiting) {
                 return const _LoadingCard();
               }
-
               final docs = snap.data?.docs ?? [];
-
               if (docs.isEmpty) {
-                return _EmptyCard(
+                return const _EmptyCard(
                   icon: Icons.receipt_outlined,
                   message: 'No transactions yet',
                 );
               }
-
               return Column(
                 children: docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
@@ -348,7 +358,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Menu Section (Feedback + Logout) ───────────────────────────────────────
+  // ── Menu Section ─────────────────────────────────────────────────────────────
 
   Widget _buildMenuSection() {
     return Padding(
@@ -356,12 +366,11 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          //const _SectionHeader(title: 'More', icon: Icons.more_horiz_rounded),
           const SizedBox(height: 10),
           _MenuTile(
             icon: Icons.feedback_rounded,
             label: 'Complain / Feedback',
-            color: _kGreen,
+            color: AppTheme.primaryColor,
             onTap: () => _showFeedbackSheet(context),
           ),
           const SizedBox(height: 8),
@@ -376,7 +385,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Feedback Bottom Sheet ───────────────────────────────────────────────────
+  // ── Feedback Bottom Sheet ─────────────────────────────────────────────────────
 
   void _showFeedbackSheet(BuildContext context) {
     final controller = TextEditingController();
@@ -413,16 +422,15 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Submit Feedback',
-                style: TextStyle(
-                  fontSize: 18,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: _kDark,
                 ),
               ),
               const SizedBox(height: 14),
-              // Type selector
+              // Type chips
               Row(
                 children: ['Feedback', 'Complaint'].map((type) {
                   final selected = selectedType == type;
@@ -437,13 +445,15 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: selected ? _kGreen : _kGreenPale,
+                          color: selected ? AppTheme.primaryColor : _kGreenPale,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           type,
                           style: TextStyle(
-                            color: selected ? Colors.white : _kGreen,
+                            color: selected
+                                ? Colors.white
+                                : AppTheme.primaryColor,
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
                           ),
@@ -454,6 +464,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 }).toList(),
               ),
               const SizedBox(height: 14),
+              // Uses AppTheme inputDecorationTheme via Theme.of(context)
               TextField(
                 controller: controller,
                 maxLines: 4,
@@ -461,29 +472,25 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                   hintText: 'Describe your issue or feedback...',
                   hintStyle: const TextStyle(color: _kGreyText, fontSize: 14),
                   filled: true,
-                  fillColor: const Color(0xFFF5F8F5),
+                  fillColor: AppTheme.backgroundLight,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _kGreen, width: 1.5),
+                    borderSide: const BorderSide(
+                      color: AppTheme.primaryColor,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
+                // Inherits ElevatedButtonThemeData from AppTheme
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _kGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                   onPressed: () async {
                     if (controller.text.trim().isEmpty) return;
                     await _firestore.collection('feedback').add({
@@ -497,7 +504,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: const Text('Feedback submitted, thank you!'),
-                          backgroundColor: _kGreen,
+                          backgroundColor: AppTheme.primaryColor,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -506,10 +513,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       );
                     }
                   },
-                  child: const Text(
-                    'Submit',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                  ),
+                  child: const Text('Submit'),
                 ),
               ),
             ],
@@ -583,7 +587,7 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Profile updated!'),
-          backgroundColor: _kGreen,
+          backgroundColor: AppTheme.primaryColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -599,7 +603,7 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -615,10 +619,9 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Personal Info',
-                style: TextStyle(
-                  fontSize: 15,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: _kDark,
                 ),
@@ -637,7 +640,7 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: _isEditing ? _kGreen : _kGreenPale,
+                    color: _isEditing ? AppTheme.primaryColor : _kGreenPale,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -645,13 +648,17 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
                       Icon(
                         _isEditing ? Icons.check_rounded : Icons.edit_rounded,
                         size: 14,
-                        color: _isEditing ? Colors.white : _kGreen,
+                        color: _isEditing
+                            ? Colors.white
+                            : AppTheme.primaryColor,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _isEditing ? 'Save' : 'Edit',
                         style: TextStyle(
-                          color: _isEditing ? Colors.white : _kGreen,
+                          color: _isEditing
+                              ? Colors.white
+                              : AppTheme.primaryColor,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -708,7 +715,7 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
               color: _kGreenPale,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 16, color: _kGreen),
+            child: Icon(icon, size: 16, color: AppTheme.primaryColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -717,15 +724,16 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(color: _kGreyText, fontSize: 11),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: _kGreyText),
                 ),
                 const SizedBox(height: 1),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: _kDark,
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
                   ),
                 ),
               ],
@@ -736,24 +744,19 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
     );
   }
 
+  /// Edit fields defer to AppTheme.inputDecorationTheme for base styling,
+  /// then only override what differs (label colour, prefix icon colour).
   Widget _editField(TextEditingController ctrl, String label, IconData icon) {
     return TextField(
       controller: ctrl,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: _kGreen, fontSize: 13),
-        prefixIcon: Icon(icon, color: _kGreen, size: 18),
+        labelStyle: const TextStyle(color: AppTheme.primaryColor, fontSize: 13),
+        prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: 18),
         isDense: true,
         filled: true,
-        fillColor: const Color(0xFFF5F8F5),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kGreen, width: 1.5),
-        ),
+        fillColor: AppTheme.backgroundLight,
+        // border / focusedBorder come from AppTheme.inputDecorationTheme
       ),
     );
   }
@@ -773,7 +776,7 @@ class _HostelDetailsTab extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -795,23 +798,19 @@ class _HostelDetailsTab extends StatelessWidget {
           if (snap.connectionState == ConnectionState.waiting) {
             return const _LoadingCard();
           }
-
           final docs = snap.data?.docs ?? [];
-
           if (docs.isEmpty) {
-            return _EmptyCard(
+            return const _EmptyCard(
               icon: Icons.hotel_outlined,
               message: 'No hostel bookings yet',
             );
           }
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Your Bookings',
-                style: TextStyle(
-                  fontSize: 15,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: _kDark,
                 ),
@@ -833,7 +832,7 @@ class _HostelDetailsTab extends StatelessWidget {
   }
 }
 
-// ─── Small Reusable Widgets ───────────────────────────────────────────────────
+// ─── Reusable Widgets ─────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -845,12 +844,11 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: _kGreen),
+        Icon(icon, size: 18, color: AppTheme.primaryColor),
         const SizedBox(width: 6),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
             color: _kDark,
           ),
@@ -876,7 +874,7 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppTheme.surfaceLight,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -907,8 +905,7 @@ class _MenuTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 15,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
@@ -939,7 +936,7 @@ class _TransactionTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -959,7 +956,7 @@ class _TransactionTile extends StatelessWidget {
             ),
             child: Icon(
               isSuccess ? Icons.check_rounded : Icons.close_rounded,
-              color: isSuccess ? _kGreen : Colors.red,
+              color: isSuccess ? AppTheme.primaryColor : Colors.red,
               size: 16,
             ),
           ),
@@ -970,9 +967,8 @@ class _TransactionTile extends StatelessWidget {
               children: [
                 Text(
                   type,
-                  style: const TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
                     color: _kDark,
                   ),
                 ),
@@ -980,7 +976,7 @@ class _TransactionTile extends StatelessWidget {
                   status,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isSuccess ? _kGreen : Colors.red,
+                    color: isSuccess ? AppTheme.primaryColor : Colors.red,
                   ),
                 ),
               ],
@@ -988,9 +984,8 @@ class _TransactionTile extends StatelessWidget {
           ),
           Text(
             '₦$amount',
-            style: const TextStyle(
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               fontWeight: FontWeight.w800,
-              fontSize: 15,
               color: _kDark,
             ),
           ),
@@ -1053,7 +1048,10 @@ class _BookingTile extends StatelessWidget {
                         width: 72,
                         height: 72,
                         color: _kGreenPale,
-                        child: const Icon(Icons.hotel_rounded, color: _kGreen),
+                        child: Icon(
+                          Icons.hotel_rounded,
+                          color: AppTheme.primaryColor,
+                        ),
                       ),
               ),
               const SizedBox(width: 12),
@@ -1065,9 +1063,8 @@ class _BookingTile extends StatelessWidget {
                     children: [
                       Text(
                         hostelName,
-                        style: const TextStyle(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          fontSize: 14,
                           color: _kDark,
                         ),
                       ),
@@ -1094,7 +1091,7 @@ class _BookingTile extends StatelessWidget {
                   child: Text(
                     status,
                     style: TextStyle(
-                      color: isActive ? _kGreen : _kGreyText,
+                      color: isActive ? AppTheme.primaryColor : _kGreyText,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1117,7 +1114,10 @@ class _LoadingCard extends StatelessWidget {
     return const Padding(
       padding: EdgeInsets.symmetric(vertical: 20),
       child: Center(
-        child: CircularProgressIndicator(color: _kGreen, strokeWidth: 2),
+        child: CircularProgressIndicator(
+          color: AppTheme.primaryColor,
+          strokeWidth: 2,
+        ),
       ),
     );
   }
@@ -1140,7 +1140,9 @@ class _EmptyCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               message,
-              style: const TextStyle(color: _kGreyText, fontSize: 14),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: _kGreyText),
             ),
           ],
         ),
