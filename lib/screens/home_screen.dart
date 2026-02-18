@@ -11,6 +11,7 @@ class HomeScreen extends StatelessWidget {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             ElevatedButton(
               onPressed: () => context.go('/hostels'),
@@ -24,6 +25,11 @@ class HomeScreen extends StatelessWidget {
                 foregroundColor: Colors.white,
               ),
               child: const Text('Admin Dashboard'),
+            //Added a button to view profile
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => context.go('/profile'),
+              child: const Text('Profile'),
             ),
           ],
         ),
