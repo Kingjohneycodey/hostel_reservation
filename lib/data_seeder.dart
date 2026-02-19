@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 Future<void> seedHostelData() async {
   final firestore = FirebaseFirestore.instance;
+  final currentUser = FirebaseAuth.instance.currentUser;
 
   try {
     print('Seeding database...');
@@ -30,8 +32,31 @@ Future<void> seedHostelData() async {
       {'name': 'Double Room', 'capacity': 2, 'price': 1500},
       {'name': 'Dormitory Bed', 'capacity': 1, 'price': 500},
     ];
-
     print('Checking/Creating room types...');
+    // ── 3. Seed current user document ──────────────────────────────────────
+    if (currentUser != null) {
+      await firestore.collection('users').doc(currentUser.uid).set({
+        'name': 'Test User',
+        'email': currentUser.email ?? 'test@email.com',
+        'phone': '08012345678',
+        'location': 'Lagos, Nigeria',
+        'avatarUrl': null,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      print('User document created: ${currentUser.uid}');
+    }
+
+    if (currentUser != null) {
+      final bookingRef = await firestore.collection('bookings').add({
+        'userId': currentUser.uid,
+        'hostelId': hostelRef.id,
+        //'roomName': bookedRoomName ?? 'Room 101',
+        'status': 'active',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print('Booking created: ${bookingRef.id}');
+    }
+
     List<String> roomTypeIds = [];
 
     for (var typeData in roomTypesData) {

@@ -1,5 +1,5 @@
 // presentation/screens/splash_screen.dart
-// 
+//
 // Purpose: Initial screen shown when the app launches.
 // Responsibility: Displays university branding and performs background initialization/delay.
 // Navigation: Success -> SignInScreen
@@ -41,10 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
             color: Colors.white, // In case image has transparency
           ),
           clipBehavior: Clip.antiAlias,
-          child: Image.asset(
-            'assets/images/futo_logo.png',
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset('assets/images/futo_logo.png', fit: BoxFit.cover),
         ),
       ),
     );
