@@ -130,7 +130,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   // ── Sliver App Bar / Header ──────────────────────────────────────────────────
 
   SliverAppBar _buildAppBar(Map<String, dynamic>? userData) {
-    final displayName = userData?['name'] ?? _user?.displayName ?? 'User Name';
+    final displayName =
+        userData?['firstName'] ?? _user?.displayName ?? 'User Name';
     final email = userData?['email'] ?? _user?.email ?? '';
     final photoUrl = userData?['avatarUrl'] ?? _user?.photoURL;
 
@@ -552,7 +553,11 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.userData?['name'] ?? '');
+    _nameCtrl = TextEditingController(
+      text:
+          '${widget.userData?['lastName'] ?? ''} ${widget.userData?['firstName'] ?? ''}'
+              .trim(),
+    );
     _phoneCtrl = TextEditingController(text: widget.userData?['phone'] ?? '');
     _locationCtrl = TextEditingController(
       text: widget.userData?['location'] ?? '',
@@ -563,7 +568,9 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
   void didUpdateWidget(_UserDetailsTab old) {
     super.didUpdateWidget(old);
     if (!_isEditing) {
-      _nameCtrl.text = widget.userData?['name'] ?? '';
+      _nameCtrl.text =
+          '${widget.userData?['lastName'] ?? ''} ${widget.userData?['firstName'] ?? ''}'
+              .trim();
       _phoneCtrl.text = widget.userData?['phone'] ?? '';
       _locationCtrl.text = widget.userData?['location'] ?? '';
     }
