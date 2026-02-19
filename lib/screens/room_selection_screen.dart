@@ -27,11 +27,11 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    print('🔐 [RoomSelection] Screen initialized');
+    print(' [RoomSelection] Screen initialized');
     // Listen to auth changes
     _auth.authStateChanges().listen((User? user) {
       if (mounted) {
-        print('🔐 [RoomSelection] Auth state changed: ${user != null ? 'Logged in' : 'Logged out'}');
+        print(' [RoomSelection] Auth state changed: ${user != null ? 'Logged in' : 'Logged out'}');
         setState(() {});
       }
     });
@@ -51,26 +51,6 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         iconTheme: const IconThemeData(color: Colors.black),
-        // actions: [
-        //   if (currentUser != null)
-        //     // Padding(
-        //     //   padding: const EdgeInsets.only(right: 16),
-        //     //   child: Row(
-        //     //     children: [
-        //     //       const Icon(Icons.person, size: 20, color: Colors.green),
-        //     //       const SizedBox(width: 4),
-        //     //       Text(
-        //     //         currentUser.email?.split('@')[0] ?? 'User',
-        //     //         style: const TextStyle(
-        //     //           color: Colors.green,
-        //     //           fontSize: 14,
-        //     //           fontWeight: FontWeight.w500,
-        //     //         ),
-        //     //       ),
-        //     //     ],
-        //     //   ),
-        //     // ),
-        // ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,9 +60,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             child: Text(
               'Room Types',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
 
@@ -95,8 +73,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) return const SizedBox();
-                if (!snapshot.hasData)
-                  return const Center(child: LinearProgressIndicator());
+                if (!snapshot.hasData) return const Center(child: LinearProgressIndicator());
 
                 final types = snapshot.data!.docs;
                 if (types.isEmpty) return const SizedBox();
@@ -108,7 +85,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                       setState(() {
                         _selectedRoomTypeId = types.first.id;
                         _selectedRoomTypeData = types.first.data() as Map<String, dynamic>;
-                        print('🏷️ [RoomSelection] Auto-selected room type: ${_selectedRoomTypeData!['name']}');
+                        print(' [RoomSelection] Auto-selected room type: ${_selectedRoomTypeData!['name']}');
                       });
                     }
                   });
@@ -118,15 +95,10 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                   value: _selectedRoomTypeId,
                   decoration: InputDecoration(
                     labelText: 'Select Room Type',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   items: types.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
@@ -142,7 +114,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                       _selectedRoomTypeData = selectedDoc.data() as Map<String, dynamic>;
                       _selectedRoomId = null;
                       _selectedRoomData = null;
-                      print('🏷️ [RoomSelection] Changed room type to: ${_selectedRoomTypeData!['name']}');
+                      print(' [RoomSelection] Changed room type to: ${_selectedRoomTypeData!['name']}');
                     });
                   },
                 );
@@ -160,9 +132,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
               children: [
                 Text(
                   'Available Rooms',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -193,16 +163,9 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.meeting_room_outlined,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
+                              Icon(Icons.meeting_room_outlined, size: 64, color: Colors.grey[400]),
                               const SizedBox(height: 16),
-                              Text(
-                                'No rooms found for this type',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
+                              Text('No rooms found for this type', style: TextStyle(color: Colors.grey[600])),
                             ],
                           ),
                         );
@@ -210,13 +173,12 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
 
                       return GridView.builder(
                         padding: const EdgeInsets.all(16),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1.5,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                            ),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 1.5,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
                         itemCount: rooms.length,
                         itemBuilder: (context, index) {
                           final room = rooms[index];
@@ -234,7 +196,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                                         ...data,
                                         'id': room.id,
                                       };
-                                      print('🏠 [RoomSelection] Selected room: $roomName (ID: ${room.id})');
+                                      print(' [RoomSelection] Selected room: $roomName (ID: ${room.id})');
                                     });
                                   }
                                 : null,
@@ -243,16 +205,12 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? Colors.green
-                                    : (isAvailable
-                                          ? Colors.white
-                                          : Colors.grey[100]),
+                                    : (isAvailable ? Colors.white : Colors.grey[100]),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isSelected
                                       ? Colors.green
-                                      : (isAvailable
-                                            ? Colors.green.shade200
-                                            : Colors.grey.shade300),
+                                      : (isAvailable ? Colors.green.shade200 : Colors.grey.shade300),
                                   width: isSelected ? 2.5 : 2,
                                 ),
                                 boxShadow: isAvailable && !isSelected
@@ -269,18 +227,13 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                                 children: [
                                   Center(
                                     child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(
-                                          isAvailable
-                                              ? Icons.meeting_room
-                                              : Icons.no_meeting_room,
+                                          isAvailable ? Icons.meeting_room : Icons.no_meeting_room,
                                           color: isSelected
                                               ? Colors.white
-                                              : (isAvailable
-                                                    ? Colors.green
-                                                    : Colors.grey),
+                                              : (isAvailable ? Colors.green : Colors.grey),
                                           size: 32,
                                         ),
                                         const SizedBox(height: 8),
@@ -291,25 +244,19 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                                             fontWeight: FontWeight.bold,
                                             color: isSelected
                                                 ? Colors.white
-                                                : (isAvailable
-                                                      ? Colors.black87
-                                                      : Colors.grey),
+                                                : (isAvailable ? Colors.black87 : Colors.grey),
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           isSelected
                                               ? 'Selected'
-                                              : (isAvailable
-                                                    ? 'Available'
-                                                    : 'Occupied'),
+                                              : (isAvailable ? 'Available' : 'Occupied'),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: isSelected
                                                 ? Colors.white
-                                                : (isAvailable
-                                                      ? Colors.green
-                                                      : Colors.grey),
+                                                : (isAvailable ? Colors.green : Colors.grey),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -322,15 +269,8 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                                       right: 8,
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.check,
-                                          size: 16,
-                                          color: Colors.green,
-                                        ),
+                                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                        child: const Icon(Icons.check, size: 16, color: Colors.green),
                                       ),
                                     ),
                                 ],
@@ -361,58 +301,49 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                 child: Column(
                   children: [
                     // Show user info if logged in
-                    // if (currentUser != null) ...[
-                    //   Container(
-                    //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    //     decoration: BoxDecoration(
-                    //       color: Colors.green.shade50,
-                    //       borderRadius: BorderRadius.circular(8),
-                    //       border: Border.all(color: Colors.green.shade200),
-                    //     ),
-                    //     child: Row(
-                    //       children: [
-                    //         const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                    //         const SizedBox(width: 8),
-                    //         Expanded(
-                    //           child: Text(
-                    //             'Booking as: ${currentUser.email}',
-                    //             style: const TextStyle(
-                    //               color: Colors.green,
-                    //               fontWeight: FontWeight.w500,
-                    //             ),
-                    //             overflow: TextOverflow.ellipsis,
-                    //           ),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
-                    //   const SizedBox(height: 12),
-                    // ],
+                    if (currentUser != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Booking as: ${currentUser.email}',
+                                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w500),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     
                     ElevatedButton(
                       onPressed: currentUser != null 
                           ? () => _initiatePayment(
                               _selectedRoomData!,
                               _selectedRoomId!,
-                              _selectedRoomTypeData!['price'] ?? 1000,
                             )
                           : () => _showLoginRequiredDialog(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: currentUser != null ? Colors.green : Colors.orange,
                         foregroundColor: Colors.white,
                         minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
                         currentUser != null
                             ? 'Book Now - ₦${_selectedRoomTypeData!['price'] ?? 1000}'
                             : 'Login to Book',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -425,7 +356,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
   }
 
   void _showLoginRequiredDialog() {
-    print('🔐 [RoomSelection] Showing login required dialog');
+    print(' [RoomSelection] Showing login required dialog');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -453,24 +384,27 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     Map<String, dynamic> roomData,
     String roomId,
   ) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print(' [RoomSelection] No user logged in');
+      return;
+    }
 
-      final user = FirebaseAuth.instance.currentUser; 
-        if (user == null) return;
+    print('[RoomSelection] ========== INITIATING PAYMENT ==========');
+    print(' User Email: ${user.email}');
+    print(' User ID: ${user.uid}');
+    print(' Room: ${roomData['name']} (ID: $roomId)');
 
-    print(roomData);
-    // Get room price
-    int price = roomData['price'] is int
-        ? roomData['price']
-        : int.tryParse(roomData['price'].toString()) ?? 1000;
+    // Get price from room type data (not from roomData)
+    final int price = _selectedRoomTypeData?['price'] ?? 1000;
+    print(' Price from room type: ₦$price');
 
-    // Generate unique reference
-    final reference = paystackService.generateReference();
-
-    // Use test email - NO LOGIN REQUIRED
-    const testEmail = 'customer@example.com';
+    // Generate unique reference with user ID
+    final reference = '${user.uid}_${paystackService.generateReference()}';
+    print(' Generated Reference: $reference');
 
     // Navigate to Paystack WebView with user email
-    print('🔄 Navigating to Paystack WebView...');
+    print(' Navigating to Paystack WebView...');
     final paymentSuccessful = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -487,19 +421,19 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
       ),
     );
 
-    print('✅ [RoomSelection] Payment result: $paymentSuccessful');
+    print(' [RoomSelection] Payment result: $paymentSuccessful');
     print('==========================================');
 
     // If payment successful, clear selection and show success
     if (paymentSuccessful == true && mounted) {
       setState(() {
         _selectedRoomId = null;
-        // _selectedRoomData = null;
+        _selectedRoomData = null;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Room booked successfully! 🎉'),
+          content: Text('Room booked successfully!'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 3),
         ),
