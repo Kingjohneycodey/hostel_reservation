@@ -16,7 +16,6 @@ class RoomSelectionScreen extends StatefulWidget {
 }
 
 class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
-  Map<String, dynamic>? _selectedRoomData; // Added
   String? _selectedRoomTypeId;
   String? _selectedRoomId;
   Map<String, dynamic>? _selectedRoomData;
@@ -454,6 +453,10 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     Map<String, dynamic> roomData,
     String roomId,
   ) async {
+
+      final user = FirebaseAuth.instance.currentUser; 
+        if (user == null) return;
+
     print(roomData);
     // Get room price
     int price = roomData['price'] is int

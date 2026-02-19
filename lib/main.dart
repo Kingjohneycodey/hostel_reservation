@@ -69,6 +69,7 @@ final _router = GoRouter(
     GoRoute(
       path: '/feedback',
       builder: (context, state) => FeedbackScreen(),
+    ),
     GoRoute(
       path: '/admin/rooms',
       builder: (context, state) => const ManageRoomsScreen(),
