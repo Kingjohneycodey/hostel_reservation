@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class PaystackWebviewService {
 
-  static const String _secretKey = 'pk_live_a02440ca25c0da4dbd482ab69494d73ddb40442f'; 
+  static const String _secretKey = 'sk_live_6770238bc80d11a2bedcbb03757b33e453f88850'; 
   
   // Initialize transaction and get checkout URL
   Future<String?> initializeTransaction({
