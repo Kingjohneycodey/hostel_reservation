@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hostel_reservation/widgets/app_footer.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -26,15 +27,10 @@ class HomeScreen extends StatelessWidget {
               ),
               child: const Text('Admin Dashboard'),
             ),
-            //Added a button to view profile
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => context.go('/profile'),
-              child: const Text('Profile'),
-            ),
           ],
         ),
       ),
+      bottomNavigationBar: const AppFooter(),
     );
   }
 }

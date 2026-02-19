@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hostel_reservation/app_theme.dart';
+import 'package:hostel_reservation/widgets/app_footer.dart';
 
 // ─── Derived palette from AppTheme ───────────────────────────────────────────
 // Primary  : AppTheme.primaryColor  = Color(0xFF008000)  – FUTO Green
@@ -89,6 +90,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
+      bottomNavigationBar: const AppFooter(),
       body: StreamBuilder<DocumentSnapshot>(
         stream: _user != null
             ? _firestore.collection('users').doc(_user!.uid).snapshots()
