@@ -27,7 +27,7 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Run the seeding function immediately when the app starts
-  await seedHostelData();
+  // await seedHostelData();
 
   runApp(const ProviderScope(child: MyApp()));
 }
