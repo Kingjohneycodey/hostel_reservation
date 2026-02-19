@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import '../services/paystack_webview_service.dart';
 import './paystack_webview_screen.dart';
 
@@ -16,11 +18,16 @@ class RoomSelectionScreen extends StatefulWidget {
 class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
   String? _selectedRoomTypeId;
   String? _selectedRoomId;
+  Map<String, dynamic>? _selectedRoomData;
+  Map<String, dynamic>? _selectedRoomTypeData;
+  
+  // Get current user
+  User? get _currentUser => FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // White background
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Select Room', style: TextStyle(color: Colors.black)),
         centerTitle: true,
@@ -64,6 +71,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                     if (mounted) {
                       setState(() {
                         _selectedRoomTypeId = types.first.id;
+                        _selectedRoomTypeData = types.first.data() as Map<String, dynamic>;
                       });
                     }
                   });
@@ -91,10 +99,12 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                     );
                   }).toList(),
                   onChanged: (value) {
+                    final selectedDoc = types.firstWhere((doc) => doc.id == value);
                     setState(() {
                       _selectedRoomTypeId = value;
-                      _selectedRoomId =
-                          null; // Reset room selection on type change
+                      _selectedRoomTypeData = selectedDoc.data() as Map<String, dynamic>;
+                      _selectedRoomId = null;
+                      _selectedRoomData = null;
                     });
                   },
                 );
@@ -164,7 +174,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                         padding: const EdgeInsets.all(16),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2, // 2 columns
+                              crossAxisCount: 2,
                               childAspectRatio: 1.5,
                               crossAxisSpacing: 16,
                               mainAxisSpacing: 16,
@@ -182,6 +192,10 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                                 ? () {
                                     setState(() {
                                       _selectedRoomId = room.id;
+                                      _selectedRoomData = {
+                                        ...data,
+                                        'id': room.id,
+                                      };
                                     });
                                   }
                                 : null,
@@ -289,30 +303,96 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                     },
                   ),
           ),
+          
+          // Book Now Button (appears when room is selected)
+          if (_selectedRoomId != null && _selectedRoomData != null && _selectedRoomTypeData != null)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: ElevatedButton(
+                  onPressed: _currentUser != null 
+                      ? () => _initiatePayment(
+                          _selectedRoomData!,
+                          _selectedRoomId!,
+                          _selectedRoomTypeData!['price'] ?? 1000,
+                        )
+                      : () => _showLoginRequiredDialog(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    _currentUser != null
+                        ? 'Book Now - ₦${_selectedRoomTypeData!['price'] ?? 1000}'
+                        : 'Login to Book',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Future<void> _initiatePayment(Map<String, dynamic> roomData, String roomId) async {
-    print(roomData);
-    // Get room price
-    int price = roomData['price'] is int 
-        ? roomData['price'] 
-        : int.tryParse(roomData['price'].toString()) ?? 1000;
+  void _showLoginRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Login Required'),
+        content: const Text('Please login to book a room.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/signin');
+            },
+            child: const Text('Login'),
+          ),
+        ],
+      ),
+    );
+  }
 
-    // Generate unique reference
-    final reference = paystackService.generateReference();
-    
-    // Use test email - NO LOGIN REQUIRED
-    const testEmail = 'customer@example.com';
+  Future<void> _initiatePayment(
+    Map<String, dynamic> roomData,
+    String roomId,
+    int price,
+  ) async {
+    final user = _currentUser;
+    if (user == null) return;
 
-    // Navigate to Paystack WebView
+    // Generate unique reference with user ID
+    final reference = '${user.uid}_${paystackService.generateReference()}';
+
+    // Navigate to Paystack WebView with user email
     final paymentSuccessful = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => PaystackWebviewScreen(
-          email: testEmail,
+          email: user.email ?? 'student@futo.edu.ng',
+          userId: user.uid,
           amount: price,
           reference: reference,
           roomId: roomId,
@@ -329,7 +409,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
         _selectedRoomId = null;
         _selectedRoomData = null;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Room booked successfully! 🎉'),

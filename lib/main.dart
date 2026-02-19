@@ -25,7 +25,7 @@ final _router = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
-
+    
     GoRoute(
       path: '/hostels',
       builder: (context, state) => const HostelListScreen(),
