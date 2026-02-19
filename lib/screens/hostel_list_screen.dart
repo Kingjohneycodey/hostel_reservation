@@ -2,8 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../widgets/app_footer.dart';
+import 'package:hostel_reservation/widgets/app_footer.dart';
 
 class HostelListScreen extends StatelessWidget {
   const HostelListScreen({super.key});
@@ -16,15 +15,15 @@ class HostelListScreen extends StatelessWidget {
     return Scaffold(
       bottomNavigationBar: const AppFooter(),
       appBar: AppBar(title: const Text('Hostels')),
-      body: FutureBuilder<DocumentSnapshot?>(
-        future: currentUser != null
-            ? FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(currentUser.uid)
-                  .get()
-            : Future<DocumentSnapshot?>.value(null),
-        builder: (context, userSnapshot) {
-          if (userSnapshot.connectionState == ConnectionState.waiting) {
+      bottomNavigationBar: const AppFooter(),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('hostels').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 

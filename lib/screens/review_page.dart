@@ -14,7 +14,11 @@ class _ReviewPageState extends State<ReviewPage> {
   final List<Map<String, dynamic>> _pastReviews = [
     {'name': 'John', 'rating': 4.5, 'comment': 'Room is clean and nice!'},
     {'name': 'Mary', 'rating': 5, 'comment': 'Very comfortable stay.'},
-    {'name': 'Alex', 'rating': 2, 'comment': 'Okay, but needs better lighting.'},
+    {
+      'name': 'Alex',
+      'rating': 2,
+      'comment': 'Okay, but needs better lighting.',
+    },
   ];
 
   @override
@@ -106,7 +110,9 @@ class _ReviewPageState extends State<ReviewPage> {
                         return Card(
                           margin: EdgeInsets.symmetric(vertical: 5),
                           child: ListTile(
-                            title: Text('${review['name']} - ${review['rating']} ⭐'),
+                            title: Text(
+                              '${review['name']} - ${review['rating']} ⭐',
+                            ),
                             subtitle: Text('${review['comment']}'),
                           ),
                         );
