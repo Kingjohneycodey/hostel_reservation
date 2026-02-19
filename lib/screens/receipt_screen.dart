@@ -17,7 +17,7 @@ class ReceiptScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Image.asset("assets/school_logo.png", height: 80),
+            Image.asset("../asset/school_logo.png", height: 80),
             const SizedBox(height: 20),
 
             Text(
