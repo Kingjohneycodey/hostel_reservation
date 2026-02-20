@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hostel_reservation/widgets/app_footer.dart';
 
 class HostelDetailScreen extends StatefulWidget {
   final String hostelId;
@@ -27,20 +28,12 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
   }
 
   void _parseImages() {
-    final urls = widget.hostelData?['imageUrls'];
-    if (urls is List) {
-      _images = urls.map((e) => e.toString()).toList();
-    } else {
-      final singleUrl = widget.hostelData?['imageUrl'];
-      if (singleUrl is String) {
-        _images = [singleUrl];
-      }
-    }
-
-    // Fallback if no images found
-    if (_images.isEmpty) {
-      _images = ['https://via.placeholder.com/600x400?text=No+Image'];
-    }
+    _images = [
+      'assets/images/hostel1.jpeg',
+      'assets/images/hostel2.jpeg',
+      'assets/images/hostel3.jpeg',
+      'assets/images/hostel4.jpeg',
+    ];
   }
 
   void _prevImage() {
@@ -70,6 +63,7 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
     final availableRooms = widget.hostelData?['availableRooms'];
 
     return Scaffold(
+      bottomNavigationBar: const AppFooter(),
       appBar: AppBar(
         title: const Text('Hostel Info'),
         backgroundColor: Colors.white,
@@ -85,7 +79,7 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
             if (context.canPop()) {
               context.pop();
             } else {
-              context.go('/hostels');
+              context.push('/hostels');
             }
           },
         ),
@@ -101,7 +95,7 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
                 borderRadius: BorderRadius.circular(12.0),
                 child: Stack(
                   children: [
-                    Image.network(
+                    Image.asset(
                       _images[_currentImageIndex],
                       width: double.infinity,
                       height: 250,
@@ -178,7 +172,7 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(6),
-                                  child: Image.network(
+                                  child: Image.asset(
                                     _images[index],
                                     fit: BoxFit.cover,
                                     errorBuilder:

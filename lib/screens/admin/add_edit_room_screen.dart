@@ -226,7 +226,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: _selectedHostelId,
+                        initialValue: _selectedHostelId,
                         decoration: _inputDecoration('Hostel', Icons.apartment),
                         items: _hostels.map((hostel) {
                           return DropdownMenuItem<String>(
@@ -241,7 +241,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: _selectedRoomTypeId,
+                        initialValue: _selectedRoomTypeId,
                         decoration: _inputDecoration(
                           'Room Type',
                           Icons.category,
@@ -283,7 +283,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                         ? 'Room can be booked by students'
                         : 'Room is unavailable/under maintenance',
                   ),
-                  activeColor: Theme.of(context).primaryColor,
+                  activeThumbColor: Theme.of(context).primaryColor,
                   value: _isAvailable,
                   onChanged: (value) => setState(() => _isAvailable = value),
                 ),

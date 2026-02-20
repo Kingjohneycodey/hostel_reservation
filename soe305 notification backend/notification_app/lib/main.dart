@@ -11,6 +11,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
 
+print("WEB apiKey from options: ${DefaultFirebaseOptions.web.apiKey}");
+print("dotenv FIREBASE_API_KEY: ${dotenv.env['FIREBASE_API_KEY']}");
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

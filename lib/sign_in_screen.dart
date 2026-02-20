@@ -7,9 +7,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hostel_reservation/screens/home_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'app_theme.dart';
-import 'registration_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -38,6 +37,8 @@ class _SignInScreenState extends State<SignInScreen> {
 
     setState(() => _isLoading = true);
 
+    print(_regNumberController.text);
+
     try {
       // 1. Look up the email associated with this registration number
       final querySnapshot = await FirebaseFirestore.instance
@@ -58,12 +59,7 @@ class _SignInScreenState extends State<SignInScreen> {
         password: _passwordController.text,
       );
 
-      // 3. Navigate to home screen
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      }
+      // 3. Auth State change will automatically redirect to /home
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -170,6 +166,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
+                          controller: _regNumberController,
                           decoration: const InputDecoration(
                             hintText: 'e.g., 2018/123456',
                           ),
@@ -193,6 +190,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         const SizedBox(height: 8),
 
                         TextFormField(
+                          controller: _passwordController,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: 'Enter your password',
@@ -214,17 +212,17 @@ class _SignInScreenState extends State<SignInScreen> {
                               value!.isEmpty ? 'Required' : null,
                         ),
 
-                    // Forgot Password (optional)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          // Implement password reset if needed
-                        },
-                        child: const Text('Forgot Password?'),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                        // Forgot Password (optional)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              // Implement password reset if needed
+                            },
+                            child: const Text('Forgot Password?'),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
 
                         // Button
                         ElevatedButton(
@@ -258,11 +256,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const RegistrationScreen(),
-                            ),
-                          );
+                          context.push('/register');
                         },
                         child: const Text(
                           'Sign Up',
