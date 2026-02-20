@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hostel_reservation/app_theme.dart';
 import 'package:hostel_reservation/widgets/app_footer.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 // ─── Derived palette from AppTheme ───────────────────────────────────────────
 // Primary  : AppTheme.primaryColor  = Color(0xFF008000)  – FUTO Green
@@ -1080,7 +1083,7 @@ class _BookingTile extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.only(right: 8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -1100,10 +1103,124 @@ class _BookingTile extends StatelessWidget {
                   ),
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: IconButton(
+                  onPressed: () => _printReceipt(context),
+                  icon: const Icon(
+                    Icons.print_rounded,
+                    color: AppTheme.primaryColor,
+                    size: 24,
+                  ),
+                  tooltip: 'Print Receipt',
+                ),
+              ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Future<void> _printReceipt(BuildContext context) async {
+    final hostelId = data['hostelId'] as String?;
+    final roomName = data['roomName'] ?? 'Room';
+    final amount = data['amount'] ?? 0;
+    final paymentReference = data['paymentReference'] ?? 'N/A';
+    final status = data['status'] ?? 'active';
+    final userEmail = data['userEmail'] ?? 'N/A';
+    final createdAt = data['createdAt'];
+
+    String hostelName = 'Hostel';
+    if (hostelId != null) {
+      final hostelDoc = await firestore
+          .collection('hostels')
+          .doc(hostelId)
+          .get();
+      if (hostelDoc.exists) {
+        hostelName = hostelDoc.data()?['name'] ?? 'Hostel';
+      }
+    }
+
+    String dateStr = 'N/A';
+    if (createdAt != null && createdAt is Timestamp) {
+      dateStr = createdAt.toDate().toString().split('.').first;
+    }
+
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Center(
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Text(
+                  'HOSTEL RESERVATION RECEIPT',
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 30),
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(20),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey400),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      _buildReceiptRow('Booking ID', docId.substring(0, 8)),
+                      pw.SizedBox(height: 10),
+                      _buildReceiptRow('Hostel', hostelName),
+                      pw.SizedBox(height: 10),
+                      _buildReceiptRow('Room', roomName),
+                      pw.SizedBox(height: 10),
+                      _buildReceiptRow('Amount', '₦$amount'),
+                      pw.SizedBox(height: 10),
+                      _buildReceiptRow('Payment Reference', paymentReference),
+                      pw.SizedBox(height: 10),
+                      _buildReceiptRow('Status', status.toUpperCase()),
+                      pw.SizedBox(height: 10),
+                      _buildReceiptRow('Email', userEmail),
+                      pw.SizedBox(height: 10),
+                      _buildReceiptRow('Date', dateStr),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 30),
+                pw.Text(
+                  'Thank you for booking with FUTO Hostel Reservation!',
+                  style: const pw.TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'Hostel_Receipt_$docId',
+    );
+  }
+
+  pw.Widget _buildReceiptRow(String label, String value) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(
+          label,
+          style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.Text(value, style: const pw.TextStyle(fontSize: 14)),
+      ],
     );
   }
 }
