@@ -67,7 +67,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     setState(() => _isLoading = true);
 
     try {
-      print('pass' + _passwordController.text);
+      print('pass${_passwordController.text}');
       // Create user with Firebase Auth
       final UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -102,7 +102,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.of(context).pop(); // Go back to Sign In
         }
       }
     } on FirebaseAuthException catch (e) {
