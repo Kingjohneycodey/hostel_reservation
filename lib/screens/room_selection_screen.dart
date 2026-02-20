@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../services/paystack_webview_service.dart';
 import './paystack_webview_screen.dart';
+import 'package:hostel_reservation/widgets/app_footer.dart';
 
 class RoomSelectionScreen extends StatefulWidget {
   final String hostelId;
@@ -16,7 +17,7 @@ class RoomSelectionScreen extends StatefulWidget {
 }
 
 class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
-  Map<String, dynamic>? _selectedRoomData; // Added
+  //Map<String, dynamic>? _selectedRoomData; // Added
   String? _selectedRoomTypeId;
   String? _selectedRoomId;
   Map<String, dynamic>? _selectedRoomTypeData;
@@ -46,6 +47,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      bottomNavigationBar: const AppFooter(),
       appBar: AppBar(
         title: const Text('Select Room', style: TextStyle(color: Colors.black)),
         centerTitle: true,
@@ -502,12 +504,8 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     Map<String, dynamic> roomData,
     String roomId,
   ) async {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) {
-      _showLoginRequiredDialog();
-      return;
-    }
-
+    final user = _auth.currentUser;
+    if (user == null) return; // guard
     print(roomData);
     // Get room price
     int price = roomData['price'] is int
@@ -550,7 +548,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Room booked successfully! 🎉'),
+          content: Text('Room booked successfully! '),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 3),
         ),

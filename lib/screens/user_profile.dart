@@ -8,13 +8,6 @@ import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-// ─── Derived palette from AppTheme ───────────────────────────────────────────
-// Primary  : AppTheme.primaryColor  = Color(0xFF008000)  – FUTO Green
-// Light    : _kGreenLight           = Color(0xFF4CAF50)  – lighter accent
-// Pale bg  : _kGreenPale            = Color(0xFFE8F5E9)  – tinted background
-// Dark bg  : AppTheme.backgroundDark                     – deep header gradient start
-// Surface  : AppTheme.surfaceLight  = Colors.white
-// BG       : AppTheme.backgroundLight                    – scaffold bg
 const _kGreenLight = Color(0xFF4CAF50);
 const _kGreenPale = Color(0xFFE8F5E9);
 const _kGreyText = Color(0xFF757575);
@@ -48,8 +41,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   }
 
   User? get _user => _auth.currentUser;
-
-  // ── Logout ──────────────────────────────────────────────────────────────────
 
   Future<void> _logout() async {
     final confirmed = await showDialog<bool>(
@@ -87,8 +78,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     }
   }
 
-  // ── Build ────────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,9 +102,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                     AnimatedBuilder(
                       animation: _tabController,
                       builder: (context, _) {
-                        if (_tabController.index == 0) {
+                        if (_tabController.index == 0)
                           return const SizedBox.shrink();
-                        }
                         return _buildTransactionSection();
                       },
                     ),
@@ -130,10 +118,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Sliver App Bar / Header ──────────────────────────────────────────────────
-
   SliverAppBar _buildAppBar(Map<String, dynamic>? userData) {
-    final displayName = userData?['name'] ?? _user?.displayName ?? 'User Name';
+    final displayName =
+        userData?['firstName'] ?? _user?.displayName ?? 'User Name';
     final email = userData?['email'] ?? _user?.email ?? '';
     final photoUrl = userData?['avatarUrl'] ?? _user?.photoURL;
 
@@ -147,7 +134,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              // Uses AppTheme.backgroundDark for the deep end of the gradient
               colors: [AppTheme.backgroundDark, AppTheme.primaryColor],
             ),
           ),
@@ -157,7 +143,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Avatar
                   Stack(
                     children: [
                       CircleAvatar(
@@ -195,7 +180,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                     ],
                   ),
                   const SizedBox(width: 14),
-                  // Name & Email
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +204,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       ],
                     ),
                   ),
-                  // Notification bell
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -261,8 +244,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Tab Bar ──────────────────────────────────────────────────────────────────
-
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -298,8 +279,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Tab Content ──────────────────────────────────────────────────────────────
-
   Widget _buildTabContent(Map<String, dynamic>? userData) {
     return AnimatedBuilder(
       animation: _tabController,
@@ -316,8 +295,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       },
     );
   }
-
-  // ── Transaction Section ──────────────────────────────────────────────────────
 
   Widget _buildTransactionSection() {
     return Padding(
@@ -340,9 +317,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       .snapshots()
                 : const Stream.empty(),
             builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
+              if (snap.connectionState == ConnectionState.waiting)
                 return const _LoadingCard();
-              }
               final docs = snap.data?.docs ?? [];
               if (docs.isEmpty) {
                 return const _EmptyCard(
@@ -362,8 +338,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       ),
     );
   }
-
-  // ── Menu Section ─────────────────────────────────────────────────────────────
 
   Widget _buildMenuSection() {
     return Padding(
@@ -389,8 +363,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       ),
     );
   }
-
-  // ── Feedback Bottom Sheet ─────────────────────────────────────────────────────
 
   void _showFeedbackSheet(BuildContext context) {
     final controller = TextEditingController();
@@ -435,7 +407,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 ),
               ),
               const SizedBox(height: 14),
-              // Type chips
               Row(
                 children: ['Feedback', 'Complaint'].map((type) {
                   final selected = selectedType == type;
@@ -469,7 +440,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 }).toList(),
               ),
               const SizedBox(height: 14),
-              // Uses AppTheme inputDecorationTheme via Theme.of(context)
               TextField(
                 controller: controller,
                 maxLines: 4,
@@ -494,7 +464,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
-                // Inherits ElevatedButtonThemeData from AppTheme
                 child: ElevatedButton(
                   onPressed: () async {
                     if (controller.text.trim().isEmpty) return;
@@ -550,25 +519,32 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
   bool _isEditing = false;
   late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
-  late TextEditingController _locationCtrl;
+
+  // ── FIX: replaced "location" with hostel + room, fetched from bookings ──
+  // In display mode these come from the active booking (read-only).
+  // We keep a plain text "location" edit field removed; instead show hostel/room
+  // from booking data which is fetched in _HostelDetailsTab. For the edit form
+  // we still allow phone editing.
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.userData?['name'] ?? '');
-    _phoneCtrl = TextEditingController(text: widget.userData?['phone'] ?? '');
-    _locationCtrl = TextEditingController(
-      text: widget.userData?['location'] ?? '',
+    _nameCtrl = TextEditingController(
+      text:
+          '${widget.userData?['lastName'] ?? ''} ${widget.userData?['firstName'] ?? ''}'
+              .trim(),
     );
+    _phoneCtrl = TextEditingController(text: widget.userData?['phone'] ?? '');
   }
 
   @override
   void didUpdateWidget(_UserDetailsTab old) {
     super.didUpdateWidget(old);
     if (!_isEditing) {
-      _nameCtrl.text = widget.userData?['name'] ?? '';
+      _nameCtrl.text =
+          '${widget.userData?['lastName'] ?? ''} ${widget.userData?['firstName'] ?? ''}'
+              .trim();
       _phoneCtrl.text = widget.userData?['phone'] ?? '';
-      _locationCtrl.text = widget.userData?['location'] ?? '';
     }
   }
 
@@ -576,7 +552,6 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
-    _locationCtrl.dispose();
     super.dispose();
   }
 
@@ -585,7 +560,6 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
     await widget.firestore.collection('users').doc(widget.userId).set({
       'name': _nameCtrl.text.trim(),
       'phone': _phoneCtrl.text.trim(),
-      'location': _locationCtrl.text.trim(),
     }, SetOptions(merge: true));
     setState(() => _isEditing = false);
     if (mounted) {
@@ -679,8 +653,6 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
             _editField(_nameCtrl, 'Full Name', Icons.person_outline_rounded),
             const SizedBox(height: 10),
             _editField(_phoneCtrl, 'Phone Number', Icons.phone_outlined),
-            const SizedBox(height: 10),
-            _editField(_locationCtrl, 'Location', Icons.location_on_outlined),
           ] else ...[
             _infoRow(
               Icons.person_rounded,
@@ -697,10 +669,10 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
               'Phone',
               widget.userData?['phone'] ?? 'Not set',
             ),
-            _infoRow(
-              Icons.location_on_rounded,
-              'Location',
-              widget.userData?['location'] ?? 'Not set',
+            // ── FIX: Hostel & Room pulled from the user's active booking ──
+            _ActiveBookingInfoRow(
+              userId: widget.userId,
+              firestore: widget.firestore,
             ),
           ],
         ],
@@ -749,8 +721,6 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
     );
   }
 
-  /// Edit fields defer to AppTheme.inputDecorationTheme for base styling,
-  /// then only override what differs (label colour, prefix icon colour).
   Widget _editField(TextEditingController ctrl, String label, IconData icon) {
     return TextField(
       controller: ctrl,
@@ -761,19 +731,195 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
         isDense: true,
         filled: true,
         fillColor: AppTheme.backgroundLight,
-        // border / focusedBorder come from AppTheme.inputDecorationTheme
+      ),
+    );
+  }
+}
+
+// ── Widget that shows Hostel + Room from the user's latest active booking ─────
+// Kept as a separate StatefulWidget so it has its own StreamBuilder lifecycle
+// and does NOT cause the parent UserDetailsTab to flicker or collapse.
+
+class _ActiveBookingInfoRow extends StatefulWidget {
+  final String? userId;
+  final FirebaseFirestore firestore;
+
+  const _ActiveBookingInfoRow({required this.userId, required this.firestore});
+
+  @override
+  State<_ActiveBookingInfoRow> createState() => _ActiveBookingInfoRowState();
+}
+
+class _ActiveBookingInfoRowState extends State<_ActiveBookingInfoRow> {
+  // Cache hostel names to avoid repeated Firestore reads on rebuild.
+  final Map<String, String> _hostelNameCache = {};
+
+  Future<String> _getHostelName(String hostelId) async {
+    if (_hostelNameCache.containsKey(hostelId))
+      return _hostelNameCache[hostelId]!;
+    final doc = await widget.firestore
+        .collection('hostels')
+        .doc(hostelId)
+        .get();
+    final name = (doc.data()?['name'] as String?) ?? 'Unknown Hostel';
+    _hostelNameCache[hostelId] = name;
+    return name;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.userId == null) {
+      return _buildRow(context, 'Hostel', 'Not set', 'Room', 'Not set');
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: widget.firestore
+          .collection('bookings')
+          .where('userId', isEqualTo: widget.userId)
+          .where('status', isEqualTo: 'confirmed')
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .snapshots(),
+      builder: (context, snap) {
+        // While loading, show placeholder rows with the same height so layout
+        // does not jump.
+        if (snap.connectionState == ConnectionState.waiting) {
+          return _buildRow(context, 'Hostel', '...', 'Room', '...');
+        }
+
+        final docs = snap.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return _buildRow(
+            context,
+            'Hostel',
+            'None assigned',
+            'Room',
+            'None assigned',
+          );
+        }
+
+        final booking = docs.first.data() as Map<String, dynamic>;
+        final hostelId = booking['hostelId'] as String?;
+        final roomName = (booking['roomName'] as String?) ?? 'Not set';
+
+        if (hostelId == null) {
+          return _buildRow(context, 'Hostel', 'Not set', 'Room', roomName);
+        }
+
+        return FutureBuilder<String>(
+          future: _getHostelName(hostelId),
+          // initialData prevents the widget from showing empty while the future resolves.
+          initialData: _hostelNameCache[hostelId] ?? '...',
+          builder: (context, nameSnap) {
+            final hostelName = nameSnap.data ?? '...';
+            return _buildRow(context, 'Hostel', hostelName, 'Room', roomName);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRow(
+    BuildContext context,
+    String hostelLabel,
+    String hostelValue,
+    String roomLabel,
+    String roomValue,
+  ) {
+    return Column(
+      children: [
+        _infoRowItem(
+          context,
+          Icons.apartment_rounded,
+          hostelLabel,
+          hostelValue,
+        ),
+        _infoRowItem(context, Icons.meeting_room_rounded, roomLabel, roomValue),
+      ],
+    );
+  }
+
+  Widget _infoRowItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: const BoxDecoration(
+              color: _kGreenPale,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 16, color: AppTheme.primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: _kGreyText),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: _kDark,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 // ─── Hostel Details Tab ───────────────────────────────────────────────────────
+// FIX: Wrapped content in a ConstrainedBox with minHeight so the card never
+// collapses during or after the StreamBuilder loads. Also denormalized the
+// hostel name lookup into a single cache on the tab level.
 
-class _HostelDetailsTab extends StatelessWidget {
+class _HostelDetailsTab extends StatefulWidget {
   final String? userId;
   final FirebaseFirestore firestore;
 
   const _HostelDetailsTab({required this.userId, required this.firestore});
+
+  @override
+  State<_HostelDetailsTab> createState() => _HostelDetailsTabState();
+}
+
+class _HostelDetailsTabState extends State<_HostelDetailsTab> {
+  final Map<String, String> _hostelNameCache = {};
+  final Map<String, String?> _hostelImageCache = {};
+
+  Future<void> _prefetchHostelData(List<QueryDocumentSnapshot> docs) async {
+    final ids = docs
+        .map((d) => (d.data() as Map<String, dynamic>)['hostelId'] as String?)
+        .whereType<String>()
+        .toSet();
+
+    for (final id in ids) {
+      if (_hostelNameCache.containsKey(id)) continue;
+      final doc = await widget.firestore.collection('hostels').doc(id).get();
+      final data = doc.data();
+      _hostelNameCache[id] = (data?['name'] as String?) ?? 'Hostel';
+      _hostelImageCache[id] = data?['imageUrl'] as String?;
+    }
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -791,47 +937,69 @@ class _HostelDetailsTab extends StatelessWidget {
           ),
         ],
       ),
-      child: StreamBuilder<QuerySnapshot>(
-        stream: userId != null
-            ? firestore
-                  .collection('bookings')
-                  .where('userId', isEqualTo: userId)
-                  .orderBy('createdAt', descending: true)
-                  .snapshots()
-            : const Stream.empty(),
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const _LoadingCard();
-          }
-          final docs = snap.data?.docs ?? [];
-          if (docs.isEmpty) {
-            return const _EmptyCard(
-              icon: Icons.hotel_outlined,
-              message: 'No hostel bookings yet',
-            );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Your Bookings',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: _kDark,
+      // ── FIX: minHeight prevents card from collapsing ──────────────────────
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 120),
+        child: StreamBuilder<QuerySnapshot>(
+          stream: widget.userId != null
+              ? widget.firestore
+                    .collection('bookings')
+                    .where('userId', isEqualTo: widget.userId)
+                    .orderBy('createdAt', descending: true)
+                    .snapshots()
+              : const Stream.empty(),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const _LoadingCard();
+            }
+
+            final docs = snap.data?.docs ?? [];
+
+            // Kick off hostel name prefetch whenever docs change.
+            if (docs.isNotEmpty) {
+              _prefetchHostelData(docs);
+            }
+
+            if (docs.isEmpty) {
+              return const _EmptyCard(
+                icon: Icons.hotel_outlined,
+                message: 'No hostel bookings yet',
+              );
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your Bookings',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: _kDark,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              ...docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                return _BookingTile(
-                  data: data,
-                  docId: doc.id,
-                  firestore: firestore,
-                );
-              }),
-            ],
-          );
-        },
+                const SizedBox(height: 12),
+                ...docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final hostelId = data['hostelId'] as String?;
+                  // Use cached names — shows immediately on subsequent builds.
+                  final hostelName = hostelId != null
+                      ? (_hostelNameCache[hostelId] ?? 'Loading...')
+                      : 'Hostel';
+                  final imageUrl = hostelId != null
+                      ? _hostelImageCache[hostelId]
+                      : null;
+
+                  return _BookingTile(
+                    data: data,
+                    docId: doc.id,
+                    hostelName: hostelName,
+                    imageUrl: imageUrl,
+                  );
+                }),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -1000,87 +1168,85 @@ class _TransactionTile extends StatelessWidget {
   }
 }
 
+// ── FIX: _BookingTile no longer does a FutureBuilder fetch on every build.
+// Hostel name and image are resolved by the parent _HostelDetailsTabState
+// cache and passed in directly, eliminating per-tile async gaps.
+
 class _BookingTile extends StatelessWidget {
   final Map<String, dynamic> data;
   final String docId;
-  final FirebaseFirestore firestore;
+  final String hostelName;
+  final String? imageUrl;
 
   const _BookingTile({
     required this.data,
     required this.docId,
-    required this.firestore,
+    required this.hostelName,
+    this.imageUrl,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hostelId = data['hostelId'] as String?;
     final roomName = data['roomName'] ?? 'Room';
     final status = data['status'] ?? 'active';
-    final isActive = status == 'active';
+    final isActive = status == 'confirmed' || status == 'active';
 
-    return FutureBuilder<DocumentSnapshot>(
-      future: hostelId != null
-          ? firestore.collection('hostels').doc(hostelId).get()
-          : null,
-      builder: (context, snap) {
-        final hostelData = snap.data?.data() as Map<String, dynamic>?;
-        final hostelName = hostelData?['name'] ?? 'Hostel';
-        final imageUrl = hostelData?['imageUrl'] as String?;
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isActive ? _kGreenLight : Colors.grey[300]!,
-              width: 1.5,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isActive ? _kGreenLight : Colors.grey[300]!,
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.horizontal(
+              left: Radius.circular(10),
             ),
+            child: imageUrl != null
+                ? Image.network(
+                    imageUrl!,
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _placeholderImage(),
+                  )
+                : _placeholderImage(),
           ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(10),
-                ),
-                child: imageUrl != null
-                    ? Image.network(
-                        imageUrl,
-                        width: 72,
-                        height: 72,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        width: 72,
-                        height: 72,
-                        color: _kGreenPale,
-                        child: Icon(
-                          Icons.hotel_rounded,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hostelName,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: _kDark,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  // ── FIX: "Room" label is now the room number / name ───────
+                  Row(
                     children: [
-                      Text(
-                        hostelName,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: _kDark,
-                        ),
+                      const Icon(
+                        Icons.meeting_room_outlined,
+                        size: 12,
+                        color: _kGreyText,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(width: 4),
                       Text(
                         roomName,
                         style: const TextStyle(color: _kGreyText, fontSize: 12),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
               Padding(
                 padding: const EdgeInsets.only(right: 8),
@@ -1117,8 +1283,17 @@ class _BookingTile extends StatelessWidget {
               ),
             ],
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+
+  Widget _placeholderImage() {
+    return Container(
+      width: 72,
+      height: 72,
+      color: _kGreenPale,
+      child: const Icon(Icons.hotel_rounded, color: AppTheme.primaryColor),
     );
   }
 
