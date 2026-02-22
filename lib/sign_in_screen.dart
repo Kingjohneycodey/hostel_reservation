@@ -7,8 +7,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:go_router/go_router.dart';
+import 'package:hostel_reservation/screens/home_screen.dart';
 import 'app_theme.dart';
+import 'registration_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -59,7 +60,12 @@ class _SignInScreenState extends State<SignInScreen> {
         password: _passwordController.text,
       );
 
-      // 3. Auth State change will automatically redirect to /home
+      // 3. Navigate to home screen
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -256,7 +262,11 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          context.push('/register');
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const RegistrationScreen(),
+                            ),
+                          );
                         },
                         child: const Text(
                           'Sign Up',

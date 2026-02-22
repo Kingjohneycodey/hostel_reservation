@@ -199,36 +199,16 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
         throw Exception('Payment verification failed');
       }
 
-      // Get room capacity
-      print(' [Firestore] Checking room capacity...');
-      final roomTypeDoc = await FirebaseFirestore.instance
-          .collection('room_types')
-          .doc(widget.roomTypeId)
-          .get();
-      final capacity = (roomTypeDoc.data()?['capacity'] as num?)?.toInt() ?? 1;
-
-      // Get current active bookings
-      final bookingsQuery = await FirebaseFirestore.instance
-          .collection('bookings')
-          .where('roomId', isEqualTo: widget.roomId)
-          .where('status', isEqualTo: 'confirmed')
-          .get();
-
-      final currentBookings = bookingsQuery.docs.length;
-      final isNowFull = (currentBookings + 1) >= capacity;
-
-      print(
-        ' [Firestore] Capacity: $capacity, Current Bookings: $currentBookings',
-      );
+      // Update room availability
       print(' [Firestore] Updating room availability...');
       print('   Room ID: ${widget.roomId}');
-      print('   Setting isAvailable: ${!isNowFull}');
+      print('   Setting isAvailable: false');
 
       await FirebaseFirestore.instance
           .collection('rooms')
           .doc(widget.roomId)
           .update({
-            'isAvailable': !isNowFull,
+            'isAvailable': false,
             'bookedAt': FieldValue.serverTimestamp(),
             'bookedBy': widget.userId,
             'bookedByEmail': widget.email,

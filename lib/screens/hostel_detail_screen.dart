@@ -28,12 +28,20 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
   }
 
   void _parseImages() {
-    _images = [
-      'assets/images/hostel1.jpeg',
-      'assets/images/hostel2.jpeg',
-      'assets/images/hostel3.jpeg',
-      'assets/images/hostel4.jpeg',
-    ];
+    final urls = widget.hostelData?['imageUrls'];
+    if (urls is List) {
+      _images = urls.map((e) => e.toString()).toList();
+    } else {
+      final singleUrl = widget.hostelData?['imageUrl'];
+      if (singleUrl is String) {
+        _images = [singleUrl];
+      }
+    }
+
+    // Fallback if no images found
+    if (_images.isEmpty) {
+      _images = ['https://via.placeholder.com/600x400?text=No+Image'];
+    }
   }
 
   void _prevImage() {
@@ -95,7 +103,7 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
                 borderRadius: BorderRadius.circular(12.0),
                 child: Stack(
                   children: [
-                    Image.asset(
+                    Image.network(
                       _images[_currentImageIndex],
                       width: double.infinity,
                       height: 250,
@@ -172,7 +180,7 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(6),
-                                  child: Image.asset(
+                                  child: Image.network(
                                     _images[index],
                                     fit: BoxFit.cover,
                                     errorBuilder:

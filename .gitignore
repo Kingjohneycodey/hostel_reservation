@@ -32,9 +32,6 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-**/build/
-.flutter-plugins
-.packages
 
 # Symbolication related
 app.*.symbols
@@ -51,19 +48,3 @@ app.*.map.json
 /windows
 /macos
 /web
-
-#firebase local config
-**/google-service.json
-**/GoogleService-Info.plist
-**/.env
-
-
-#flutter generated
-
-**/build/
-**/.dart_tool/
-**/.flutter-plugins
-**/.flutter-plugins-dependencies
-**/.packages
-**/.metadata
-

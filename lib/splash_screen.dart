@@ -4,7 +4,9 @@
 // Responsibility: Displays university branding and performs background initialization/delay.
 // Navigation: Success -> SignInScreen
 
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'sign_in_screen.dart';
 
 /// Animated entry screen with university logo and green theme.
 // [LABEL: SPLASH SCREEN] - The first thing users see.
@@ -19,7 +21,11 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // No timer needed, router will redirect based on auth state when ready
+    Timer(const Duration(seconds: 3), () {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const SignInScreen()),
+      );
+    });
   }
 
   @override
