@@ -17,9 +17,10 @@ class RoomSelectionScreen extends StatefulWidget {
 }
 
 class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
-  Map<String, dynamic>? _selectedRoomData; // Added
+  //Map<String, dynamic>? _selectedRoomData; // Added
   String? _selectedRoomTypeId;
   String? _selectedRoomId;
+  Map<String, dynamic>? _selectedRoomData;
   Map<String, dynamic>? _selectedRoomTypeData;
 
   // Use FirebaseAuth instance
@@ -225,9 +226,8 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                         padding: const EdgeInsets.all(16),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2, // 2 columns
-                              childAspectRatio:
-                                  0.8, // Adjusted height for button
+                              crossAxisCount: 2,
+                              childAspectRatio: 1.5,
                               crossAxisSpacing: 16,
                               mainAxisSpacing: 16,
                             ),
@@ -238,209 +238,120 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                           final isAvailable = data['isAvailable'] ?? false;
                           final roomName = data['name'] ?? 'Room ${index + 1}';
                           final isSelected = _selectedRoomId == room.id;
-                          final capacity =
-                              (_selectedRoomTypeData?['capacity'] as num?)
-                                  ?.toInt() ??
-                              1;
 
-                          return StreamBuilder<QuerySnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('bookings')
-                                .where('roomId', isEqualTo: room.id)
-                                .where('status', isEqualTo: 'confirmed')
-                                .snapshots(),
-                            builder: (context, bookingSnapshot) {
-                              final bookedSpaces = bookingSnapshot.hasData
-                                  ? bookingSnapshot.data!.docs.length
-                                  : 0;
-                              final remainingSpaces = capacity - bookedSpaces;
-                              final isActuallyAvailable =
-                                  isAvailable && remainingSpaces > 0;
-
-                              return InkWell(
-                                onTap: isActuallyAvailable
-                                    ? () {
-                                        setState(() {
-                                          _selectedRoomId = room.id;
-                                          _selectedRoomData = {
-                                            ...data,
-                                            'id': room.id,
-                                          };
-                                          print(
-                                            '🏠 [RoomSelection] Selected room: $roomName (ID: ${room.id})',
-                                          );
-                                        });
-                                      }
-                                    : null,
+                          return InkWell(
+                            onTap: isAvailable
+                                ? () {
+                                    setState(() {
+                                      _selectedRoomId = room.id;
+                                      _selectedRoomData = {
+                                        ...data,
+                                        'id': room.id,
+                                      };
+                                      print(
+                                        '🏠 [RoomSelection] Selected room: $roomName (ID: ${room.id})',
+                                      );
+                                    });
+                                  }
+                                : null,
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Colors.green
+                                    : (isAvailable
+                                          ? Colors.white
+                                          : Colors.grey[100]),
                                 borderRadius: BorderRadius.circular(16),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? Colors.green
-                                        : (isActuallyAvailable
-                                              ? Colors.white
-                                              : Colors.grey[100]),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? Colors.green
-                                          : (isActuallyAvailable
-                                                ? Colors.green.shade200
-                                                : Colors.grey.shade300),
-                                      width: isSelected ? 2.5 : 2,
-                                    ),
-                                    boxShadow:
-                                        isActuallyAvailable && !isSelected
-                                        ? [
-                                            BoxShadow(
-                                              color: Colors.green.withOpacity(
-                                                0.1,
-                                              ),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
-                                  child: Stack(
-                                    children: [
-                                      Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              isActuallyAvailable
-                                                  ? Icons.meeting_room
-                                                  : Icons.no_meeting_room,
-                                              color: isSelected
-                                                  ? Colors.white
-                                                  : (isActuallyAvailable
-                                                        ? Colors.green
-                                                        : Colors.grey),
-                                              size: 32,
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              roomName,
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: isSelected
-                                                    ? Colors.white
-                                                    : (isActuallyAvailable
-                                                          ? Colors.black87
-                                                          : Colors.grey),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '$bookedSpaces/$capacity Spaces',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: isSelected
-                                                    ? Colors.white
-                                                    : (isActuallyAvailable
-                                                          ? Colors.black87
-                                                          : Colors.grey),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              isSelected
-                                                  ? 'Selected'
-                                                  : (isActuallyAvailable
-                                                        ? 'Available'
-                                                        : 'Full'),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: isSelected
-                                                    ? Colors.white
-                                                    : (isActuallyAvailable
-                                                          ? Colors.green
-                                                          : Colors.grey),
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            if (isActuallyAvailable) ...[
-                                              const SizedBox(height: 8),
-                                              SizedBox(
-                                                height: 32,
-                                                child: ElevatedButton(
-                                                  onPressed: () {
-                                                    _initiatePayment(
-                                                      data,
-                                                      room.id,
-                                                    );
-                                                  },
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: isSelected
-                                                        ? Colors.white
-                                                        : Colors.green,
-                                                    foregroundColor: isSelected
-                                                        ? Colors.green
-                                                        : Colors.white,
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                        ),
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  child: const Text(
-                                                    'Book Room',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                            const SizedBox(height: 8),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: List.generate(
-                                                5,
-                                                (index) => const Icon(
-                                                  Icons.star,
-                                                  color: Colors.amber,
-                                                  size: 14,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.green
+                                      : (isAvailable
+                                            ? Colors.green.shade200
+                                            : Colors.grey.shade300),
+                                  width: isSelected ? 2.5 : 2,
+                                ),
+                                boxShadow: isAvailable && !isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.green.withOpacity(0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
                                         ),
-                                      ),
-                                      if (isSelected)
-                                        Positioned(
-                                          top: 8,
-                                          right: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: const BoxDecoration(
-                                              color: Colors.white,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.check,
-                                              size: 16,
-                                              color: Colors.green,
-                                            ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Stack(
+                                children: [
+                                  Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          isAvailable
+                                              ? Icons.meeting_room
+                                              : Icons.no_meeting_room,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : (isAvailable
+                                                    ? Colors.green
+                                                    : Colors.grey),
+                                          size: 32,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          roomName,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : (isAvailable
+                                                      ? Colors.black87
+                                                      : Colors.grey),
                                           ),
                                         ),
-                                    ],
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          isSelected
+                                              ? 'Selected'
+                                              : (isAvailable
+                                                    ? 'Available'
+                                                    : 'Occupied'),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : (isAvailable
+                                                      ? Colors.green
+                                                      : Colors.grey),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
+                                  if (isSelected)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.check,
+                                          size: 16,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           );
                         },
                       );
@@ -599,7 +510,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     if (paymentSuccessful == true && mounted) {
       setState(() {
         _selectedRoomId = null;
-        _selectedRoomData = null;
+        // _selectedRoomData = null;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(

@@ -7,16 +7,19 @@ class AppFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      height: 60, // Reduces overall height
       child: Row(
         children: [
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () => context.go('/'),
+            tooltip: 'Home',
+          ),
           IconButton(
             icon: const Icon(Icons.bed),
             onPressed: () => context.go('/hostels'),
             tooltip: 'Hostels',
           ),
-          Spacer(),
+          const Spacer(),
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () => context.go('/profile'),
