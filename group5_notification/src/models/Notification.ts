@@ -1,6 +1,6 @@
 import { EventType } from './Events';
 
-export type NotificationChannel = 'email' | 'sms' | 'in_app';
+export type NotificationChannel = 'email' | 'sms' | 'in_app' | 'push';
 
 export type NotificationStatus = 'pending' | 'sent' | 'failed';
 
