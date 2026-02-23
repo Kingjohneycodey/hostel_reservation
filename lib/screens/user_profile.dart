@@ -600,6 +600,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             },
           ),
           const SizedBox(height: 8),
+          // ── Complain / Feedback Menu Item ────────────────────────────────────
+          // Opens ComplaintFeedbackScreen where users can submit complaints/feedback
+          // tied to their bookings. Navigation is done via MaterialPageRoute.push().
           _MenuTile(
             icon: Icons.feedback_rounded,
             label: 'Complain / Feedback',

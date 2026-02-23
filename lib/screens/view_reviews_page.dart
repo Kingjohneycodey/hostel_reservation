@@ -4,11 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hostel_reservation/app_theme.dart';
 import 'package:hostel_reservation/widgets/app_footer.dart';
 
+// ─── Color Constants ──────────────────────────────────────────────────────────
 const _kGreyText = Color(0xFF757575);
 const _kGreenLight = Color(0xFF4CAF50);
 const _kGreenPale = Color(0xFFE8F5E9);
 const _kDark = Color(0xFF1A1A1A);
 
+// ─── Main Screen: View Reviews Page ──────────────────────────────────────────
+// Displays reviews for a hostel/booking: shows local user review (if saved)
+// merged with dummy reviews. This is a StatefulWidget that loads and manages
+// the local review data.
 class ViewReviewsPage extends StatefulWidget {
   final String docId;
   final Map<String, dynamic> bookingData;
@@ -32,6 +37,10 @@ class ViewReviewsPage extends StatefulWidget {
 }
 
 class _ViewReviewsPageState extends State<ViewReviewsPage> {
+  // ─ Load Local Review from SharedPreferences ──────────────────────────────────
+  // Retrieves the locally-saved review (if any) for this booking from
+  // SharedPreferences using the key pattern: review_<bookingId>
+  // Returns the review map or null if no local review exists.
   Future<Map<String, dynamic>?> _loadLocalReview() async {
     final prefs = await SharedPreferences.getInstance();
     final json = prefs.getString('review_${widget.docId}');
@@ -46,8 +55,17 @@ class _ViewReviewsPageState extends State<ViewReviewsPage> {
     return data;
   }
 
+  // ─ Build UI ──────────────────────────────────────────────────────────────────
+  // Main build method. Assembles:
+  // 1. Booking header card (hostel name, room, image)
+  // 2. Reviews list (local review + dummy reviews)
+  // Uses FutureBuilder to load local review asynchronously.
   @override
   Widget build(BuildContext context) {
+    // ── Dummy Reviews ────────────────────────────────────────────────────────
+    // Sample review data to display alongside the user's locally-saved review.
+    // Each dummy review includes: userName, rating, text, date, isDummy flag.
+    // These are shown to provide initial content and UX context.
     // Dummy reviews to display alongside any local review
     final List<Map<String, dynamic>> dummyReviews = [
       {
@@ -85,7 +103,10 @@ class _ViewReviewsPageState extends State<ViewReviewsPage> {
       ),
       body: Column(
         children: [
-          // Booking Header Card
+          // ── Booking Header Card ──────────────────────────────────────────
+          // Displays hostel image, name, and room name at the top.
+          // Provides context for which property the reviews are for.
+          // Container to show booking info (image, hostel name, room name)
           Container(
             margin: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -148,6 +169,10 @@ class _ViewReviewsPageState extends State<ViewReviewsPage> {
             ),
           ),
 
+          // ── View Past Reviews (Local + Dummy) ────────────────────────────
+          // FutureBuilder loads the local review from SharedPreferences.
+          // Merges local review (if present) with dummy reviews and displays them.
+          // Each review is rendered using _ReviewCard widget.
           // Reviews List
           Expanded(
             child: FutureBuilder<Map<String, dynamic>?>(
@@ -162,6 +187,10 @@ class _ViewReviewsPageState extends State<ViewReviewsPage> {
                 }
 
                 final localReview = localSnap.data;
+                // ─ Merge Local Review with Dummy Reviews ─────────────────
+                // Combines the locally-saved user review (if present) with
+                // hardcoded dummy reviews for display.
+                // Local review always appears first (if it exists).
                 final allReviews = [
                   if (localReview != null) localReview,
                   ...dummyReviews,
@@ -190,6 +219,9 @@ class _ViewReviewsPageState extends State<ViewReviewsPage> {
                   );
                 }
 
+                // ─ Build Reviews List View ──────────────────────────────
+                // Renders each review (local + dummy) as a _ReviewCard.
+                // Each card shows user avatar, name, rating, text, and timestamp.
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: allReviews.length,
@@ -213,6 +245,13 @@ class _ViewReviewsPageState extends State<ViewReviewsPage> {
   }
 }
 
+// ─── Review Card Widget ──────────────────────────────────────────────────────
+// Individual review card. Displays:
+// - User avatar and name
+// - Star rating and numeric rating value
+// - Review text
+// - Time-ago timestamp (e.g., "2d ago")
+// - Optional "Sample" label for dummy reviews
 class _ReviewCard extends StatelessWidget {
   final String userName;
   final double rating;
@@ -231,6 +270,9 @@ class _ReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final difference = DateTime.now().difference(date);
+    // ─ Format Time-Ago Timestamp ─────────────────────────────────────────
+    // Converts the review date to a relative time string (e.g., "2d ago").
+    // Used to show when the review was posted.
     String timeAgo;
     if (difference.inDays > 0) {
       timeAgo = '${difference.inDays}d ago';
@@ -263,6 +305,9 @@ class _ReviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ─ Review Header: Avatar, Name, "Sample" Badge ──────────────────
+          // Top row showing user's avatar circle, name, and a "Sample" label
+          // for dummy reviews. Also displays the time-ago timestamp below.
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -330,6 +375,9 @@ class _ReviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
+          // ─ Star Rating Display ───────────────────────────────────────────
+          // Shows filled, half, and empty stars based on the rating value.
+          // Displays numeric rating (e.g., "4.5") next to the stars.
           // Star Rating
           Row(
             children: [
@@ -347,6 +395,9 @@ class _ReviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
+          // ─ Review Text Body ──────────────────────────────────────────────
+          // The main comment/review text written by the user.
+          // Rendered with word wrapping and line-height styling.
           // Review Text
           Text(
             text,
@@ -361,6 +412,9 @@ class _ReviewCard extends StatelessWidget {
     );
   }
 
+  // ─── Star Builder Helper ───────────────────────────────────────────────────
+  // Constructs a list of star icons (filled, half, empty) based on rating.
+  // Example: rating 4.5 displays 4 filled stars + 1 half star.
   List<Widget> _buildStars(double rating) {
     int fullStars = rating.floor();
     bool hasHalf = (rating - fullStars) >= 0.5;
