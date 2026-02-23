@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:hostel_reservation/app_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hostel_reservation/widgets/app_footer.dart';
 
 const _kGreyText = Color(0xFF757575);
@@ -102,6 +104,8 @@ class _ComplaintTab extends StatefulWidget {
 
 class _ComplaintTabState extends State<_ComplaintTab> {
   final _formKey = GlobalKey<FormState>();
+  String? _selectedBookingId;
+  Map<String, dynamic>? _selectedBookingData;
   String _selectedCategory = 'Plumbing';
   String _complaintText = '';
   bool _isSubmitting = false;
@@ -120,6 +124,15 @@ class _ComplaintTabState extends State<_ComplaintTab> {
   Future<void> _submitComplaint() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_selectedBookingId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a booking to complain about')),
+        );
+      }
+      return;
+    }
+
     _formKey.currentState!.save();
     setState(() => _isSubmitting = true);
 
@@ -132,6 +145,10 @@ class _ComplaintTabState extends State<_ComplaintTab> {
 
       final complaint = {
         'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'bookingId': _selectedBookingId,
+        'hostelId': _selectedBookingData?['hostelId'] ?? '',
+        'hostelName': _selectedBookingData?['hostelName'] ?? '',
+        'roomName': _selectedBookingData?['roomName'] ?? '',
         'category': _selectedCategory,
         'text': _complaintText,
         'status': 'Pending',
@@ -186,6 +203,149 @@ class _ComplaintTabState extends State<_ComplaintTab> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
+              // Booking selector
+              Text(
+                'Select Booking',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: _kDark,
+                ),
+              ),
+              const SizedBox(height: 8),
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseAuth.instance.currentUser != null
+                    ? FirebaseFirestore.instance
+                        .collection('bookings')
+                        .where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+                        .snapshots()
+                    : const Stream.empty(),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primaryColor,
+                      ),
+                    );
+                  }
+
+                  final docs = snap.data?.docs ?? [];
+                  if (docs.isEmpty) {
+                    return const _EmptyCard(
+                      icon: Icons.hotel_outlined,
+                      message: 'No bookings found',
+                    );
+                  }
+
+                  return DropdownButtonFormField<String>(
+                    value: _selectedBookingId,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: AppTheme.backgroundLight,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    items: docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final room = data['roomName'] ?? 'Room';
+                      final hostelId = data['hostelId'] as String?;
+
+                      return DropdownMenuItem(
+                        value: doc.id,
+                        child: FutureBuilder<DocumentSnapshot?>(
+                          future: hostelId != null
+                              ? FirebaseFirestore.instance.collection('hostels').doc(hostelId).get()
+                              : Future.value(null),
+                          builder: (context, hsnap) {
+                            String hostelDisplay;
+                            if ((data['hostelName'] as String?)?.isNotEmpty == true) {
+                              hostelDisplay = data['hostelName'] as String;
+                            } else if (hsnap.connectionState == ConnectionState.done && hsnap.data?.data() is Map<String, dynamic>) {
+                              hostelDisplay = (hsnap.data!.data() as Map<String, dynamic>)['name'] ?? 'Hostel';
+                            } else {
+                              hostelDisplay = 'Hostel';
+                            }
+                            return Text('$room — $hostelDisplay');
+                          },
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) async {
+                      setState(() {
+                        _selectedBookingId = value;
+                        final sel = docs.firstWhere((d) => d.id == value);
+                        _selectedBookingData = (sel.data() as Map<String, dynamic>?) ?? {};
+                      });
+
+                      // if hostelName missing, fetch and attach it to selected booking data
+                      final hid = _selectedBookingData?['hostelId'] as String?;
+                      if ((_selectedBookingData?['hostelName'] as String?)?.isEmpty ?? true && hid != null) {
+                        try {
+                          final hsnap = await FirebaseFirestore.instance.collection('hostels').doc(hid).get();
+                          final hdata = hsnap.data() as Map<String, dynamic>?;
+                          if (hdata != null) {
+                            setState(() {
+                              _selectedBookingData?['hostelName'] = hdata['name'] ?? '';
+                            });
+                          }
+                        } catch (_) {}
+                      }
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              if (_selectedBookingData != null) ...[
+                FutureBuilder<DocumentSnapshot?>(
+                  future: _selectedBookingData!['hostelId'] != null
+                      ? FirebaseFirestore.instance.collection('hostels').doc(_selectedBookingData!['hostelId'] as String).get()
+                      : Future.value(null),
+                  builder: (context, snap) {
+                      final hostelName = (_selectedBookingData!['hostelName'] as String?) ??
+                          (snap.data?.data() is Map<String, dynamic>
+                              ? (snap.data!.data() as Map<String, dynamic>)['name'] as String?
+                              : null);
+                      final roomName = _selectedBookingData!['roomName'] ?? '';
+                      return Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.hotel_rounded, color: AppTheme.primaryColor),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(hostelName ?? 'Hostel', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 4),
+                                Text(roomName, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _kGreyText)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+              const SizedBox(height: 8),
+
               // Category
               Text(
                 'Complaint Category',
@@ -373,6 +533,40 @@ class _FeedbackTabState extends State<_FeedbackTab> {
   }
 }
 
+class _EmptyCard extends StatelessWidget {
+  final IconData icon;
+  final String message;
+
+  const _EmptyCard({
+    required this.icon,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: _kGreyText,
+            size: 48,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: _kGreyText),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ComplaintCard extends StatelessWidget {
   final Map<String, dynamic> complaint;
 
@@ -440,22 +634,31 @@ class _ComplaintCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      category,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: _kDark,
+                      Text(
+                        category,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: _kDark,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      timeAgo,
-                      style: const TextStyle(
-                        color: _kGreyText,
-                        fontSize: 12,
+                      const SizedBox(height: 6),
+                      // show hostel and room for the complaint
+                      if (((complaint['hostelName'] as String?)?.isNotEmpty ?? false) || ((complaint['roomName'] as String?)?.isNotEmpty ?? false))
+                        Text(
+                          '${complaint['hostelName'] ?? ''}${(complaint['hostelName'] != null && (complaint['roomName'] as String?)?.isNotEmpty == true) ? ' • ' : ''}${complaint['roomName'] ?? ''}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: _kGreyText,
+                          ),
+                        ),
+                      const SizedBox(height: 6),
+                      Text(
+                        timeAgo,
+                        style: const TextStyle(
+                          color: _kGreyText,
+                          fontSize: 12,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
                 ),
               ),
               Container(
