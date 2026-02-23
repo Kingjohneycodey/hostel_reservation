@@ -4,7 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hostel_reservation/app_theme.dart';
 import 'package:hostel_reservation/widgets/app_footer.dart';
-
+import 'package:hostel_reservation/screens/review_selection_screen.dart';
+import 'package:hostel_reservation/screens/complaint_feedback_screen.dart';
 import 'package:hostel_reservation/features/cancel/cancel_button.dart';
 
 // ─── Derived palette from AppTheme ───────────────────────────────────────────
@@ -18,6 +19,214 @@ const _kGreenLight = Color(0xFF4CAF50);
 const _kGreenPale = Color(0xFFE8F5E9);
 const _kGreyText = Color(0xFF757575);
 const _kDark = Color(0xFF1A1A1A);
+
+// ─── Reusable Widgets ─────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+
+  const _SectionHeader({required this.title, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppTheme.primaryColor),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: _kDark,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _MenuTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppTheme.surfaceLight,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.5)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionTile extends StatelessWidget {
+  final Map<String, dynamic> data;
+
+  const _TransactionTile({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final type = data['type'] ?? 'Payment';
+    final amount = data['amount']?.toString() ?? '0';
+    final status = data['status'] ?? 'completed';
+    final isSuccess = status == 'completed';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isSuccess ? _kGreenPale : Colors.red.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isSuccess ? Icons.check_rounded : Icons.close_rounded,
+              color: isSuccess ? AppTheme.primaryColor : Colors.red,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  type,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: _kDark,
+                  ),
+                ),
+                Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isSuccess ? AppTheme.primaryColor : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '₦$amount',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: _kDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 20),
+      child: Center(
+        child: CircularProgressIndicator(
+          color: AppTheme.primaryColor,
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyCard extends StatelessWidget {
+  final IconData icon;
+  final String message;
+
+  const _EmptyCard({required this.icon, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(icon, color: _kGreenLight, size: 36),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: _kGreyText),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -335,7 +544,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 ? _firestore
                       .collection('transactions')
                       .where('userId', isEqualTo: _user!.uid)
-                      .orderBy('createdAt', descending: true)
+                      // avoid ordering on server to skip composite index requirement
                       .limit(5)
                       .snapshots()
                 : const Stream.empty(),
@@ -343,7 +552,17 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               if (snap.connectionState == ConnectionState.waiting) {
                 return const _LoadingCard();
               }
-              final docs = snap.data?.docs ?? [];
+              var docs = snap.data?.docs ?? [];
+              // sort locally by createdAt descending and trim to 5
+              docs.sort((a, b) {
+                final aTime = (a['createdAt'] as Timestamp?)?.toDate();
+                final bTime = (b['createdAt'] as Timestamp?)?.toDate();
+                if (aTime == null || bTime == null) return 0;
+                return bTime.compareTo(aTime);
+              });
+              if (docs.length > 5) {
+                docs = docs.sublist(0, 5);
+              }
               if (docs.isEmpty) {
                 return const _EmptyCard(
                   icon: Icons.receipt_outlined,
@@ -352,12 +571,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               }
               return Column(
                 children: docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                
-                final bookingId = doc.id;
-                final paymentReference = data['paymentReference'] ?? '';
-                final status = data['status'] ?? 'confirmed';
-                final isCancelled = status == 'cancelled';
+                  final data = doc.data() as Map<String, dynamic>;
                   return _TransactionTile(data: data);
                 }).toList(),
               );
@@ -378,10 +592,26 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         children: [
           const SizedBox(height: 10),
           _MenuTile(
+            icon: Icons.rate_review_rounded,
+            label: 'Reviews',
+            color: AppTheme.primaryColor,
+            onTap: () {
+              _showReviewsBottomSheet(context);
+            },
+          ),
+          const SizedBox(height: 8),
+          _MenuTile(
             icon: Icons.feedback_rounded,
             label: 'Complain / Feedback',
             color: AppTheme.primaryColor,
-            onTap: () => _showFeedbackSheet(context),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const ComplaintFeedbackScreen(),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 8),
           _MenuTile(
@@ -395,146 +625,165 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
-  // ── Feedback Bottom Sheet ─────────────────────────────────────────────────────
+  // ── Reviews Bottom Sheet ──────────────────────────────────────────────────────
 
-  void _showFeedbackSheet(BuildContext context) {
-    final controller = TextEditingController();
-    String? selectedType = 'Feedback';
-
+  void _showReviewsBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Container(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+      builder: (ctx) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          left: 20,
+          right: 20,
+          top: 20,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Submit Feedback',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: _kDark,
-                ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Select Booking to Review',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: _kDark,
               ),
-              const SizedBox(height: 14),
-              // Type chips
-              Row(
-                children: ['Feedback', 'Complaint'].map((type) {
-                  final selected = selectedType == type;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => setSheetState(() => selectedType = type),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: selected ? AppTheme.primaryColor : _kGreenPale,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          type,
-                          style: TextStyle(
-                            color: selected
-                                ? Colors.white
-                                : AppTheme.primaryColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
+            ),
+            const SizedBox(height: 16),
+            StreamBuilder<QuerySnapshot>(
+              stream: _user != null
+                  ? _firestore
+                      .collection('bookings')
+                      .where('userId', isEqualTo: _user!.uid)
+                      // query without ordering to avoid composite index requirement
+                      .snapshots()
+                  : const Stream.empty(),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryColor,
+                    ),
+                  );
+                }
+
+                final docs = snap.data?.docs ?? [];
+                if (docs.isEmpty) {
+                  // keep a minimum height so sheet doesn't collapse to zero
+                  return SizedBox(
+                    height: 120,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.hotel_outlined,
+                            color: _kGreenLight,
+                            size: 36,
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No bookings to review',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: _kGreyText),
+                          ),
+                        ],
                       ),
                     ),
                   );
-                }).toList(),
-              ),
-              const SizedBox(height: 14),
-              // Uses AppTheme inputDecorationTheme via Theme.of(context)
-              TextField(
-                controller: controller,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Describe your issue or feedback...',
-                  hintStyle: const TextStyle(color: _kGreyText, fontSize: 14),
-                  filled: true,
-                  fillColor: AppTheme.backgroundLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppTheme.primaryColor,
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                // Inherits ElevatedButtonThemeData from AppTheme
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (controller.text.trim().isEmpty) return;
-                    await _firestore.collection('feedback').add({
-                      'userId': _user?.uid,
-                      'type': selectedType,
-                      'message': controller.text.trim(),
-                      'createdAt': FieldValue.serverTimestamp(),
-                    });
-                    if (ctx.mounted) {
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Feedback submitted, thank you!'),
-                          backgroundColor: AppTheme.primaryColor,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
+                }
+
+                // sort locally by createdAt descending (same approach as hostel details tab)
+                docs.sort((a, b) {
+                  final aTime = (a['createdAt'] as Timestamp?)?.toDate();
+                  final bTime = (b['createdAt'] as Timestamp?)?.toDate();
+                  if (aTime == null || bTime == null) return 0;
+                  return bTime.compareTo(aTime);
+                });
+
+                return SizedBox(
+                  height: 300,
+                  child: ListView.builder(
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      final data = doc.data() as Map<String, dynamic>;
+                      final hostelId = data['hostelId'] as String?;
+                      final roomName = data['roomName'] ?? 'Room';
+
+                      return FutureBuilder<DocumentSnapshot>(
+                        future: hostelId != null
+                            ? _firestore
+                                .collection('hostels')
+                                .doc(hostelId)
+                                .get()
+                            : null,
+                        builder: (context, hostelSnap) {
+                          final hostelName =
+                              (hostelSnap.data?.data() as Map<String, dynamic>?)?[ 'name'] ?? 'Hostel';
+
+                          return ListTile(
+                            leading: const Icon(
+                              Icons.hotel_rounded,
+                              color: AppTheme.primaryColor,
+                            ),
+                            title: Text(hostelName),
+                            subtitle: Text(roomName),
+                            trailing: const Icon(Icons.chevron_right, color: _kGreyText),
+                            onTap: () {
+                              // capture the parent context before closing sheet
+                              final rootCtx = context;
+                              Navigator.pop(ctx);
+                              // push after the bottom sheet has closed
+                              Future.microtask(() {
+                                Navigator.of(rootCtx, rootNavigator: true).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ReviewSelectionScreen(
+                                      docId: doc.id,
+                                      bookingData: data,
+                                    ),
+                                  ),
+                                );
+                              });
+                            },
+                          );
+                        },
                       );
-                    }
-                  },
-                  child: const Text('Submit'),
-                ),
-              ),
-            ],
-          ),
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
   }
+
+  // close state class
 }
 
-// ─── User Details Tab ─────────────────────────────────────────────────────────
+  // ─── User Details Tab ─────────────────────────────────────────────────────────
 
 class _UserDetailsTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -778,6 +1027,120 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
   }
 }
 
+// ─── Booking Tile ─────────────────────────────────────────────────────────────
+
+class _BookingTile extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final String docId;
+  final FirebaseFirestore firestore;
+
+  const _BookingTile({
+    required this.data,
+    required this.docId,
+    required this.firestore,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hostelId = data['hostelId'] as String?;
+    final roomName = data['roomName'] ?? 'Room';
+    final checkIn = (data['checkIn'] as Timestamp?)?.toDate();
+    final checkOut = (data['checkOut'] as Timestamp?)?.toDate();
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: hostelId != null
+          ? firestore.collection('hostels').doc(hostelId).get()
+          : null,
+      builder: (context, hostelSnap) {
+        final hostelName =
+            (hostelSnap.data?.data() as Map<String, dynamic>?)
+                ?['name'] ??
+            'Hostel';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceLight,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _kGreenPale,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.hotel_rounded,
+                      color: AppTheme.primaryColor,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hostelName,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: _kDark,
+                              ),
+                        ),
+                        Text(
+                          roomName,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: _kGreyText),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (checkIn != null && checkOut != null) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today_rounded,
+                        size: 14, color: _kGreyText),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${checkIn.day}/${checkIn.month} - ${checkOut.day}/${checkOut.month}',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: _kGreyText),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 // ─── Hostel Details Tab ───────────────────────────────────────────────────────
 
 class _HostelDetailsTab extends StatelessWidget {
@@ -859,355 +1222,3 @@ class _HostelDetailsTab extends StatelessWidget {
   }
 }
 
-// ─── Reusable Widgets ─────────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final IconData icon;
-
-  const _SectionHeader({required this.title, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: AppTheme.primaryColor),
-        const SizedBox(width: 6),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: _kDark,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MenuTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _MenuTile({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppTheme.surfaceLight,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color, size: 18),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  label,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded, color: color.withOpacity(0.5)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TransactionTile extends StatelessWidget {
-  final Map<String, dynamic> data;
-
-  const _TransactionTile({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    final type = data['type'] ?? 'Payment';
-    final amount = data['amount']?.toString() ?? '0';
-    final status = data['status'] ?? 'completed';
-    final isSuccess = status == 'completed';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isSuccess ? _kGreenPale : Colors.red.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isSuccess ? Icons.check_rounded : Icons.close_rounded,
-              color: isSuccess ? AppTheme.primaryColor : Colors.red,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  type,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: _kDark,
-                  ),
-                ),
-                Text(
-                  status,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isSuccess ? AppTheme.primaryColor : Colors.red,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '₦$amount',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: _kDark,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BookingTile extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final String docId;
-  final FirebaseFirestore firestore;
-
-  const _BookingTile({
-    required this.data,
-    required this.docId,
-    required this.firestore,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hostelId = data['hostelId'] as String?;
-    final roomName = data['roomName'] ?? 'Room';
-    final status = data['status'] ?? 'confirmed';
-    final isActive = status != 'cancelled';
-
-    final bookingId = docId;
-    final paymentReference = data['paymentReference'] ?? '';
-    final isCancelled = status == 'cancelled';
-
-    return FutureBuilder<DocumentSnapshot>(
-      future: hostelId != null
-          ? firestore.collection('hostels').doc(hostelId).get()
-          : null,
-      builder: (context, snap) {
-        final hostelData = snap.data?.data() as Map<String, dynamic>?;
-        final hostelName = hostelData?['name'] ?? 'Hostel';
-        final imageUrl = hostelData?['imageUrl'] as String?;
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isActive ? _kGreenLight : Colors.grey[300]!,
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-
-              // ================= ROW =================
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(10),
-                    ),
-                    child: imageUrl != null
-                        ? Image.network(
-                            imageUrl,
-                            width: 72,
-                            height: 72,
-                            fit: BoxFit.cover,
-                          )
-                        : Container(
-                            width: 72,
-                            height: 72,
-                            color: _kGreenPale,
-                            child: Icon(
-                              Icons.hotel_rounded,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            hostelName,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: _kDark,
-                                ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            roomName,
-                            style: const TextStyle(
-                              color: _kGreyText,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? _kGreenPale
-                            : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          color: isActive
-                              ? AppTheme.primaryColor
-                              : _kGreyText,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              CancelButton(
-                bookingId: bookingId,
-                paymentReference: paymentReference,
-                isCancelled: isCancelled,
-                hostelName: hostelName,
-                roomName: roomName,
-                imageUrl: data['imageUrl'] ?? '',
-                amount: (data['amount'] ?? 0).toDouble(),
-                createdAt: (data['createdAt'] as Timestamp).toDate(),
-              ),
-            ],
-          ),
-        );
-      },   // <-- closes FutureBuilder builder
-    );     // <-- closes FutureBuilder
-  }        // <-- closes build method
-}          // <-- closes _BookingTile class
-
-class _LoadingCard extends StatelessWidget {
-  const _LoadingCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: CircularProgressIndicator(
-          color: AppTheme.primaryColor,
-          strokeWidth: 2,
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyCard extends StatelessWidget {
-  final IconData icon;
-  final String message;
-
-  const _EmptyCard({required this.icon, required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(icon, color: _kGreenLight, size: 36),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: _kGreyText),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

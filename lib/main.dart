@@ -10,7 +10,7 @@ import 'screens/hostel_list_screen.dart';
 import 'screens/hostel_detail_screen.dart';
 import 'screens/room_selection_screen.dart';
 import 'screens/complaint_page.dart';
-import 'screens/review_page.dart';
+// Removed legacy review page to use local-only review flow (view_reviews_page.dart)
 import 'screens/feedback_screen.dart';
 import 'screens/admin/manage_rooms_screen.dart';
 import 'screens/admin/add_edit_room_screen.dart';
@@ -56,7 +56,7 @@ final _router = GoRouter(
 
     GoRoute(path: '/complaints', builder: (context, state) => ComplaintPage()),
 
-    GoRoute(path: '/reviews', builder: (context, state) => ReviewPage()),
+    // Removed legacy '/reviews' route to avoid using the old ReviewPage.
 
     GoRoute(path: '/feedback', builder: (context, state) => FeedbackScreen()),
     GoRoute(

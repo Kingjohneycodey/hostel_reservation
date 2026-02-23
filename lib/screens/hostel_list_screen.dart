@@ -133,6 +133,27 @@ import 'package:hostel_reservation/widgets/app_footer.dart';
 class HostelListScreen extends StatelessWidget {
   const HostelListScreen({super.key});
 
+  // helper that builds a 5‑star rating bar plus numeric value
+  Widget _buildStarRating(double rating) {
+    int fullStars = rating.floor();
+    bool hasHalf = (rating - fullStars) >= 0.5;
+    const int totalStars = 5;
+    List<Widget> stars = [];
+    for (int i = 1; i <= totalStars; i++) {
+      if (i <= fullStars) {
+        stars.add(const Icon(Icons.star, size: 14, color: Colors.amber));
+      } else if (i == fullStars + 1 && hasHalf) {
+        stars.add(const Icon(Icons.star_half, size: 14, color: Colors.amber));
+      } else {
+        stars.add(const Icon(Icons.star_border, size: 14, color: Colors.amber));
+      }
+    }
+    stars.add(const SizedBox(width: 4));
+    stars.add(Text(rating.toStringAsFixed(1),
+        style: const TextStyle(color: Colors.white70, fontSize: 12)));
+    return Row(children: stars);
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -227,6 +248,13 @@ class HostelListScreen extends StatelessWidget {
                         } else if (userGender == 'female' && isMaleHostel) {
                           shouldBlur = true;
                         }
+
+                        // calculate a mock rating based on availability/lock state
+                        final ratingsHigh = [4.8, 4.7, 4.9];
+                        final ratingsLow = [3.6, 3.7, 3.8];
+                        final rating = shouldBlur
+                            ? ratingsHigh[index % ratingsHigh.length]
+                            : ratingsLow[index % ratingsLow.length];
 
                         // Assign assets based on hostel name (mock logic as requested)
                         // hostel1 in assets for hostel a, etc.
@@ -339,6 +367,9 @@ class HostelListScreen extends StatelessWidget {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
+                                      const SizedBox(height: 4),
+                                      // star rating display
+                                      _buildStarRating(rating),
                                       const SizedBox(height: 4),
                                       Row(
                                         children: [
