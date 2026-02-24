@@ -13,9 +13,9 @@ async function setupTestUser() {
     // TODO: Update these values with your real email and phone number
     const testUser = {
         userId: 'test-user-001',
-        email: 'chinyeakaprosper2006@gmail.com',  // ⚠️ UPDATE THIS with your email
-        phoneNumber: '+2348165121933',      // ⚠️ UPDATE THIS with your phone (format: +234...)
-        name: 'Test User',
+        email: 'obikachibuike15@gmail.com',  // ⚠️ UPDATE THIS with your email
+        phoneNumber: '2348088829788',      // ⚠️ UPDATE THIS with your phone (format: +234...)
+        name: 'test user',
         createdAt: new Date(),
     };
 
@@ -46,3 +46,5 @@ async function setupTestUser() {
 }
 
 setupTestUser();
+
+

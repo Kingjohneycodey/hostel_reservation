@@ -1,129 +1,68 @@
-
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/notification_model.dart';
-import '../services/firestore_notification_service.dart';
-import '../services/notification_dispatcher.dart';
-import '../widgets/notification_tile.dart';
+import '../services/backend_notification_service.dart';
 
 class NotificationCenter extends StatefulWidget {
-  final String userId;
-  const NotificationCenter({super.key, required this.userId});
+const NotificationCenter({super.key});
 
-  @override
-  State<NotificationCenter> createState() => _NotificationCenterState();
+@override
+State<NotificationCenter> createState() => _NotificationCenterState();
 }
 
 class _NotificationCenterState extends State<NotificationCenter> {
-  final FirestoreNotificationService _service = FirestoreNotificationService();
-  final NotificationDispatcher _dispatcher = NotificationDispatcher();
+final _userController = TextEditingController(text: "test-user-001");
 
-  void _showTestDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Test External Channels'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.email),
-              title: const Text('Send Test Email'),
-              onTap: () async {
-                await FirebaseFirestore.instance.collection('notifications').add({
-                  'userId': widget.userId,
-                  'channel': ['email'],
-                  'type': 'test_email',
-                  'title': 'Flutter Test Email',
-                  'message': 'This is a test email from Flutter Web!',
-                  'metadata': {'email': 'test@example.com'},
-                  'status': 'pending',
-                  'createdAt': FieldValue.serverTimestamp(),
-                  'isRead': false,
-                });
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Triggered Email Send')));
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.sms),
-              title: const Text('Send Test SMS'),
-              onTap: () async {
-                await FirebaseFirestore.instance.collection('notifications').add({
-                  'userId': widget.userId,
-                  'channel': ['sms'],
-                  'type': 'test_sms',
-                  'title': 'Flutter Test SMS',
-                  'message': 'This is a test SMS from Flutter Web!',
-                  'metadata': {'phoneNumber': '+1234567890'},
-                  'status': 'pending',
-                  'createdAt': FieldValue.serverTimestamp(),
-                  'isRead': false,
-                });
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Triggered SMS Send')));
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+bool _loading = false;
+String _result = "";
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.science),
-            tooltip: 'Test Channels',
-            onPressed: _showTestDialog,
-          ),
-        ],
-      ),
-      body: StreamBuilder<List<NotificationModel>>(
-        stream: _service.getUserNotifications(widget.userId),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
+Future<void> _sendTestNotification() async {
+setState(() {
+_loading = true;
+_result = "";
+});
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+final ok = await BackendNotificationService.send(
+userId: _userController.text.trim(),
+event: "booking_confirmation",
+payload: {
+"title": "Flutter Test",
+"message": "If you see this → Flutter ↔ Backend ↔ Firebase works 🎉",
+"channel": ["in_app"]
+},
+idempotencyKey: DateTime.now().millisecondsSinceEpoch.toString(),
+);
 
-          final notifications = snapshot.data ?? [];
+setState(() {
+_loading = false;
+_result = ok ? "✅ Sent successfully" : "❌ Failed to send";
+});
+}
 
-          if (notifications.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.notifications_off, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('No notifications yet'),
-                ],
-              ),
-            );
-          }
+@override
+Widget build(BuildContext context) {
+return Scaffold(
+appBar: AppBar(title: const Text("Notification Tester")),
+body: Padding(
+padding: const EdgeInsets.all(20),
+child: Column(
+children: [
+TextField(
+controller: _userController,
+decoration: const InputDecoration(labelText: "User ID"),
+),
+const SizedBox(height: 20),
 
-          return ListView.separated(
-            itemCount: notifications.length,
-            separatorBuilder: (ctx, i) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              return NotificationTile(notification: notifications[index]);
-            },
-          );
-        },
-      ),
-    );
-  }
+ElevatedButton(
+onPressed: _loading ? null : _sendTestNotification,
+child: _loading
+? const CircularProgressIndicator()
+: const Text("Send Test Notification"),
+),
+
+const SizedBox(height: 20),
+Text(_result, style: const TextStyle(fontSize: 16)),
+],
+),
+),
+);
+}
 }

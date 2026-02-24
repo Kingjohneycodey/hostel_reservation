@@ -40,16 +40,3 @@ export const notFoundHandler = (_req: Request, res: Response): void => {
         }
     });
 };
-<<<<<<< HEAD
-=======
-
-
-
-
-
-
-
-
-
-
->>>>>>> a6c426e93c1a0797ea0d8bdf9de32d8bff086737

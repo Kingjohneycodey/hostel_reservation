@@ -42,3 +42,4 @@ coverage/
 
 # Misc
 .env.test
+.env
