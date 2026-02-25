@@ -33,11 +33,26 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   late TabController _tabController;
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
+  late Stream<DocumentSnapshot> _userStream;
+  late Stream<QuerySnapshot> _transactionsStream;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    _userStream = _user != null
+        ? _firestore.collection('users').doc(_user!.uid).snapshots()
+        : const Stream.empty();
+
+    _transactionsStream = _user != null
+        ? _firestore
+              .collection('transactions')
+              .where('userId', isEqualTo: _user!.uid)
+              .orderBy('createdAt', descending: true)
+              .limit(5)
+              .snapshots()
+        : const Stream.empty();
   }
 
   @override
@@ -90,9 +105,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       backgroundColor: AppTheme.backgroundLight,
       bottomNavigationBar: const AppFooter(),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: _user != null
-            ? _firestore.collection('users').doc(_user!.uid).snapshots()
-            : const Stream.empty(),
+        stream: _userStream,
         builder: (context, userSnap) {
           final userData = userSnap.data?.data() as Map<String, dynamic>?;
 
@@ -314,14 +327,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           ),
           const SizedBox(height: 10),
           StreamBuilder<QuerySnapshot>(
-            stream: _user != null
-                ? _firestore
-                      .collection('transactions')
-                      .where('userId', isEqualTo: _user!.uid)
-                      .orderBy('createdAt', descending: true)
-                      .limit(5)
-                      .snapshots()
-                : const Stream.empty(),
+            stream: _transactionsStream,
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting)
                 return const _LoadingCard();
@@ -334,12 +340,12 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               }
               return Column(
                 children: docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                
-                final bookingId = doc.id;
-                final paymentReference = data['paymentReference'] ?? '';
-                final status = data['status'] ?? 'confirmed';
-                final isCancelled = status == 'cancelled';
+                  final data = doc.data() as Map<String, dynamic>;
+
+                  final bookingId = doc.id;
+                  final paymentReference = data['paymentReference'] ?? '';
+                  final status = data['status'] ?? 'confirmed';
+                  final isCancelled = status == 'cancelled';
                   return _TransactionTile(data: data);
                 }).toList(),
               );
@@ -362,6 +368,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             label: 'Complain / Feedback',
             color: AppTheme.primaryColor,
             onTap: () => _showFeedbackSheet(context),
+          ),
+          const SizedBox(height: 8),
+          _MenuTile(
+            icon: Icons.admin_panel_settings_rounded,
+            label: 'Admin Panel',
+            color: AppTheme.primaryColor,
+            onTap: () => context.push('/admin/hostels'),
           ),
           const SizedBox(height: 8),
           _MenuTile(
@@ -764,6 +777,33 @@ class _ActiveBookingInfoRow extends StatefulWidget {
 class _ActiveBookingInfoRowState extends State<_ActiveBookingInfoRow> {
   // Cache hostel names to avoid repeated Firestore reads on rebuild.
   final Map<String, String> _hostelNameCache = {};
+  late Stream<QuerySnapshot> _activeBookingStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _initStream();
+  }
+
+  void _initStream() {
+    _activeBookingStream = widget.userId != null
+        ? widget.firestore
+              .collection('bookings')
+              .where('userId', isEqualTo: widget.userId)
+              .where('status', isEqualTo: 'confirmed')
+              .orderBy('createdAt', descending: true)
+              .limit(1)
+              .snapshots()
+        : const Stream.empty();
+  }
+
+  @override
+  void didUpdateWidget(_ActiveBookingInfoRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userId != widget.userId) {
+      _initStream();
+    }
+  }
 
   Future<String> _getHostelName(String hostelId) async {
     if (_hostelNameCache.containsKey(hostelId))
@@ -784,13 +824,7 @@ class _ActiveBookingInfoRowState extends State<_ActiveBookingInfoRow> {
     }
 
     return StreamBuilder<QuerySnapshot>(
-      stream: widget.firestore
-          .collection('bookings')
-          .where('userId', isEqualTo: widget.userId)
-          .where('status', isEqualTo: 'confirmed')
-          .orderBy('createdAt', descending: true)
-          .limit(1)
-          .snapshots(),
+      stream: _activeBookingStream,
       builder: (context, snap) {
         // While loading, show placeholder rows with the same height so layout
         // does not jump.
@@ -915,21 +949,55 @@ class _HostelDetailsTab extends StatefulWidget {
 class _HostelDetailsTabState extends State<_HostelDetailsTab> {
   final Map<String, String> _hostelNameCache = {};
   final Map<String, String?> _hostelImageCache = {};
+  late Stream<QuerySnapshot> _bookingsStream;
 
-  Future<void> _prefetchHostelData(List<QueryDocumentSnapshot> docs) async {
-    final ids = docs
-        .map((d) => (d.data() as Map<String, dynamic>)['hostelId'] as String?)
-        .whereType<String>()
-        .toSet();
+  @override
+  void initState() {
+    super.initState();
+    _initStream();
+  }
 
-    for (final id in ids) {
-      if (_hostelNameCache.containsKey(id)) continue;
-      final doc = await widget.firestore.collection('hostels').doc(id).get();
-      final data = doc.data();
-      _hostelNameCache[id] = (data?['name'] as String?) ?? 'Hostel';
-      _hostelImageCache[id] = data?['imageUrl'] as String?;
+  void _initStream() {
+    _bookingsStream = widget.userId != null
+        ? widget.firestore
+              .collection('bookings')
+              .where('userId', isEqualTo: widget.userId)
+              .orderBy('createdAt', descending: true)
+              .snapshots()
+        : const Stream.empty();
+  }
+
+  @override
+  void didUpdateWidget(_HostelDetailsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userId != widget.userId) {
+      _initStream();
     }
-    if (mounted) setState(() {});
+  }
+
+  Future<Map<String, String?>> _getHostelData(String? hostelId) async {
+    if (hostelId == null) return {'name': 'Hostel', 'imageUrl': null};
+    if (_hostelNameCache.containsKey(hostelId)) {
+      return {
+        'name': _hostelNameCache[hostelId],
+        'imageUrl': _hostelImageCache[hostelId],
+      };
+    }
+    try {
+      final doc = await widget.firestore
+          .collection('hostels')
+          .doc(hostelId)
+          .get();
+      final data = doc.data();
+      final name = (data?['name'] as String?) ?? 'Hostel';
+      final image = data?['imageUrl'] as String?;
+
+      _hostelNameCache[hostelId] = name;
+      _hostelImageCache[hostelId] = image;
+      return {'name': name, 'imageUrl': image};
+    } catch (e) {
+      return {'name': 'Hostel', 'imageUrl': null};
+    }
   }
 
   @override
@@ -952,24 +1020,13 @@ class _HostelDetailsTabState extends State<_HostelDetailsTab> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 120),
         child: StreamBuilder<QuerySnapshot>(
-          stream: widget.userId != null
-              ? widget.firestore
-                    .collection('bookings')
-                    .where('userId', isEqualTo: widget.userId)
-                    .orderBy('createdAt', descending: true)
-                    .snapshots()
-              : const Stream.empty(),
+          stream: _bookingsStream,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
               return const _LoadingCard();
             }
 
             final docs = snap.data?.docs ?? [];
-
-            // Kick off hostel name prefetch whenever docs change.
-            if (docs.isNotEmpty) {
-              _prefetchHostelData(docs);
-            }
 
             if (docs.isEmpty) {
               return const _EmptyCard(
@@ -992,19 +1049,27 @@ class _HostelDetailsTabState extends State<_HostelDetailsTab> {
                 ...docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final hostelId = data['hostelId'] as String?;
-                  // Use cached names — shows immediately on subsequent builds.
-                  final hostelName = hostelId != null
-                      ? (_hostelNameCache[hostelId] ?? 'Loading...')
-                      : 'Hostel';
-                  final imageUrl = hostelId != null
-                      ? _hostelImageCache[hostelId]
-                      : null;
 
-                  return _BookingTile(
-                    data: data,
-                    docId: doc.id,
-                    hostelName: hostelName,
-                    imageUrl: imageUrl,
+                  return FutureBuilder<Map<String, String?>>(
+                    future: _getHostelData(hostelId),
+                    initialData: _hostelNameCache.containsKey(hostelId)
+                        ? {
+                            'name': _hostelNameCache[hostelId],
+                            'imageUrl': _hostelImageCache[hostelId],
+                          }
+                        : null,
+                    builder: (context, snapshot) {
+                      final hostelName = snapshot.data?['name'] ?? 'Loading...';
+                      final imageUrl = snapshot.data?['imageUrl'];
+
+                      return _BookingTile(
+                        key: ValueKey(doc.id),
+                        data: data,
+                        docId: doc.id,
+                        hostelName: hostelName,
+                        imageUrl: imageUrl,
+                      );
+                    },
                   );
                 }),
               ],
@@ -1190,6 +1255,7 @@ class _BookingTile extends StatelessWidget {
   final String? imageUrl;
 
   const _BookingTile({
+    super.key,
     required this.data,
     required this.docId,
     required this.hostelName,
@@ -1217,7 +1283,7 @@ class _BookingTile extends StatelessWidget {
             borderRadius: const BorderRadius.horizontal(
               left: Radius.circular(10),
             ),
-            child: imageUrl != null
+            child: (imageUrl != null && imageUrl!.isNotEmpty)
                 ? Image.network(
                     imageUrl!,
                     width: 72,

@@ -265,6 +265,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                                           _selectedRoomData = {
                                             ...data,
                                             'id': room.id,
+                                            'customPrice': data['customPrice'],
                                           };
                                           print(
                                             '🏠 [RoomSelection] Selected room: $roomName (ID: ${room.id})',
@@ -392,10 +393,10 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                                                           ),
                                                     ),
                                                   ),
-                                                  child: const Text(
-                                                    'Book Room',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
+                                                  child: Text(
+                                                    'Book (\₦${data['customPrice'] ?? _selectedRoomTypeData?['price'] ?? 1000})',
+                                                    style: const TextStyle(
+                                                      fontSize: 10,
                                                       fontWeight:
                                                           FontWeight.bold,
                                                     ),
@@ -514,7 +515,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                       ),
                       child: Text(
                         currentUser != null
-                            ? 'Book Now - ₦${_selectedRoomTypeData!['price'] ?? 1000}'
+                            ? 'Book Now - \₦${_selectedRoomData!['customPrice'] ?? _selectedRoomTypeData?['price'] ?? 1000}'
                             : 'Login to Book',
                         style: const TextStyle(
                           fontSize: 18,
@@ -563,10 +564,15 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     final user = _auth.currentUser;
     if (user == null) return; // guard
     print(roomData);
-    // Get room price
-    int price = roomData['price'] is int
-        ? roomData['price']
-        : int.tryParse(roomData['price'].toString()) ?? 1000;
+    // Get room price (checking for custom override first)
+    final dynamic rawPrice =
+        roomData['customPrice'] ?? roomData['price'] ?? 1000;
+
+    int price = rawPrice is int
+        ? rawPrice
+        : (rawPrice is double
+              ? rawPrice.toInt()
+              : int.tryParse(rawPrice.toString()) ?? 1000);
 
     // Generate unique reference
     final reference = paystackService.generateReference();

@@ -10,6 +10,8 @@ import 'package:hostel_reservation/sign_in_screen.dart';
 import 'package:hostel_reservation/splash_screen.dart';
 import 'package:hostel_reservation/screens/admin/manage_rooms_screen.dart';
 import 'package:hostel_reservation/screens/admin/add_edit_room_screen.dart';
+import 'package:hostel_reservation/screens/admin/manage_hostels_screen.dart';
+import 'package:hostel_reservation/screens/admin/add_edit_hostel_screen.dart';
 import 'package:hostel_reservation/registration_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -77,12 +79,34 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const UserProfileScreen(),
       ),
       GoRoute(
+        path: '/admin/hostels',
+        builder: (context, state) => const ManageHostelsScreen(),
+      ),
+      GoRoute(
+        path: '/admin/hostels/add',
+        builder: (context, state) => const AddEditHostelScreen(),
+      ),
+      GoRoute(
+        path: '/admin/hostels/edit/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          final data = state.extra as Map<String, dynamic>?;
+          return AddEditHostelScreen(hostelId: id, initialData: data);
+        },
+      ),
+      GoRoute(
         path: '/admin/rooms',
-        builder: (context, state) => const ManageRoomsScreen(),
+        builder: (context, state) {
+          final hostelId = state.uri.queryParameters['hostelId'];
+          return ManageRoomsScreen(hostelId: hostelId);
+        },
       ),
       GoRoute(
         path: '/admin/rooms/add',
-        builder: (context, state) => const AddEditRoomScreen(),
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          return AddEditRoomScreen(initialData: data);
+        },
       ),
       GoRoute(
         path: '/admin/rooms/edit/:id',
