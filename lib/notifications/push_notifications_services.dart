@@ -9,8 +9,14 @@ class PushNotificationService {
     await FirebaseMessaging.instance.requestPermission();
 
     // Local notification setup
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidSettings);
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
+    const iosSettings = DarwinInitializationSettings();
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
     await _local.initialize(initSettings);
 
     // Android channel
@@ -23,12 +29,17 @@ class PushNotificationService {
 
     await _local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
 
     // Print token
-    final token = await FirebaseMessaging.instance.getToken();
-    print('🔥 FCM TOKEN: $token');
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      print('🔥 FCM TOKEN: $token');
+    } catch (e) {
+      print('🔥 FCM TOKEN Error (APNS might not be set): $e');
+    }
 
     // Foreground messages => show popup
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
@@ -46,6 +57,7 @@ class PushNotificationService {
             importance: Importance.max,
             priority: Priority.high,
           ),
+          iOS: DarwinNotificationDetails(),
         ),
       );
     });
