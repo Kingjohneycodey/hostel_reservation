@@ -63,6 +63,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
   User? get _user => _auth.currentUser;
 
+  // ── Logout ──────────────────────────────────────────────────────────────────
+
   Future<void> _logout() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -99,6 +101,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     }
   }
 
+  // ── Build ────────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,8 +125,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                     AnimatedBuilder(
                       animation: _tabController,
                       builder: (context, _) {
-                        if (_tabController.index == 0)
+                        if (_tabController.index == 0) {
                           return const SizedBox.shrink();
+                        }
                         return _buildTransactionSection();
                       },
                     ),
@@ -136,6 +141,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       ),
     );
   }
+
+  // ── Sliver App Bar / Header ──────────────────────────────────────────────────
 
   SliverAppBar _buildAppBar(Map<String, dynamic>? userData) {
     final displayName =
@@ -153,6 +160,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
+              // Uses AppTheme.backgroundDark for the deep end of the gradient
               colors: [AppTheme.backgroundDark, AppTheme.primaryColor],
             ),
           ),
@@ -162,6 +170,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // Avatar
                   Stack(
                     children: [
                       CircleAvatar(
@@ -199,6 +208,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                     ],
                   ),
                   const SizedBox(width: 14),
+                  // Name & Email
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,6 +233,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       ],
                     ),
                   ),
+                  // Notification bell
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -263,6 +274,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
+  // ── Tab Bar ──────────────────────────────────────────────────────────────────
+
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -298,6 +311,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
+  // ── Tab Content ──────────────────────────────────────────────────────────────
+
   Widget _buildTabContent(Map<String, dynamic>? userData) {
     return AnimatedBuilder(
       animation: _tabController,
@@ -315,6 +330,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     );
   }
 
+  // ── Transaction Section ──────────────────────────────────────────────────────
+
   Widget _buildTransactionSection() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -329,8 +346,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           StreamBuilder<QuerySnapshot>(
             stream: _transactionsStream,
             builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting)
+              if (snap.connectionState == ConnectionState.waiting) {
                 return const _LoadingCard();
+              }
               final docs = snap.data?.docs ?? [];
               if (docs.isEmpty) {
                 return const _EmptyCard(
@@ -355,6 +373,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       ),
     );
   }
+
+  // ── Menu Section ─────────────────────────────────────────────────────────────
 
   Widget _buildMenuSection() {
     return Padding(
@@ -387,6 +407,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       ),
     );
   }
+
+  // ── Feedback Bottom Sheet ─────────────────────────────────────────────────────
 
   void _showFeedbackSheet(BuildContext context) {
     final controller = TextEditingController();
@@ -431,6 +453,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 ),
               ),
               const SizedBox(height: 14),
+              // Type chips
               Row(
                 children: ['Feedback', 'Complaint'].map((type) {
                   final selected = selectedType == type;
@@ -464,6 +487,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 }).toList(),
               ),
               const SizedBox(height: 14),
+              // Uses AppTheme inputDecorationTheme via Theme.of(context)
               TextField(
                 controller: controller,
                 maxLines: 4,
@@ -488,6 +512,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
+                // Inherits ElevatedButtonThemeData from AppTheme
                 child: ElevatedButton(
                   onPressed: () async {
                     if (controller.text.trim().isEmpty) return;
@@ -543,12 +568,7 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
   bool _isEditing = false;
   late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
-
-  // ── FIX: replaced "location" with hostel + room, fetched from bookings ──
-  // In display mode these come from the active booking (read-only).
-  // We keep a plain text "location" edit field removed; instead show hostel/room
-  // from booking data which is fetched in _HostelDetailsTab. For the edit form
-  // we still allow phone editing.
+  late TextEditingController _locationCtrl;
 
   @override
   void initState() {
@@ -559,6 +579,9 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
               .trim(),
     );
     _phoneCtrl = TextEditingController(text: widget.userData?['phone'] ?? '');
+    _locationCtrl = TextEditingController(
+      text: widget.userData?['location'] ?? '',
+    );
   }
 
   @override
@@ -569,6 +592,7 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
           '${widget.userData?['lastName'] ?? ''} ${widget.userData?['firstName'] ?? ''}'
               .trim();
       _phoneCtrl.text = widget.userData?['phone'] ?? '';
+      _locationCtrl.text = widget.userData?['location'] ?? '';
     }
   }
 
@@ -576,6 +600,7 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _locationCtrl.dispose();
     super.dispose();
   }
 
@@ -584,6 +609,7 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
     await widget.firestore.collection('users').doc(widget.userId).set({
       'name': _nameCtrl.text.trim(),
       'phone': _phoneCtrl.text.trim(),
+      'location': _locationCtrl.text.trim(),
     }, SetOptions(merge: true));
     setState(() => _isEditing = false);
     if (mounted) {
@@ -677,6 +703,8 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
             _editField(_nameCtrl, 'Full Name', Icons.person_outline_rounded),
             const SizedBox(height: 10),
             _editField(_phoneCtrl, 'Phone Number', Icons.phone_outlined),
+            const SizedBox(height: 10),
+            _editField(_locationCtrl, 'Location', Icons.location_on_outlined),
           ] else ...[
             _infoRow(
               Icons.person_rounded,
@@ -693,10 +721,10 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
               'Phone',
               widget.userData?['phone'] ?? 'Not set',
             ),
-            // ── FIX: Hostel & Room pulled from the user's active booking ──
-            _ActiveBookingInfoRow(
-              userId: widget.userId,
-              firestore: widget.firestore,
+            _infoRow(
+              Icons.location_on_rounded,
+              'Location',
+              widget.userData?['location'] ?? 'Not set',
             ),
           ],
         ],
@@ -745,6 +773,8 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
     );
   }
 
+  /// Edit fields defer to AppTheme.inputDecorationTheme for base styling,
+  /// then only override what differs (label colour, prefix icon colour).
   Widget _editField(TextEditingController ctrl, String label, IconData icon) {
     return TextField(
       controller: ctrl,
@@ -932,11 +962,8 @@ class _ActiveBookingInfoRowState extends State<_ActiveBookingInfoRow> {
 }
 
 // ─── Hostel Details Tab ───────────────────────────────────────────────────────
-// FIX: Wrapped content in a ConstrainedBox with minHeight so the card never
-// collapses during or after the StreamBuilder loads. Also denormalized the
-// hostel name lookup into a single cache on the tab level.
 
-class _HostelDetailsTab extends StatefulWidget {
+class _HostelDetailsTab extends StatelessWidget {
   final String? userId;
   final FirebaseFirestore firestore;
 
@@ -1074,8 +1101,29 @@ class _HostelDetailsTabState extends State<_HostelDetailsTab> {
                 }),
               ],
             );
-          },
-        ),
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your Bookings',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: _kDark,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return _BookingTile(
+                  data: data,
+                  docId: doc.id,
+                  firestore: firestore,
+                );
+              }),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1244,44 +1292,45 @@ class _TransactionTile extends StatelessWidget {
   }
 }
 
-// ── FIX: _BookingTile no longer does a FutureBuilder fetch on every build.
-// Hostel name and image are resolved by the parent _HostelDetailsTabState
-// cache and passed in directly, eliminating per-tile async gaps.
-
 class _BookingTile extends StatelessWidget {
   final Map<String, dynamic> data;
   final String docId;
-  final String hostelName;
-  final String? imageUrl;
+  final FirebaseFirestore firestore;
 
   const _BookingTile({
     super.key,
     required this.data,
     required this.docId,
-    required this.hostelName,
-    this.imageUrl,
+    required this.firestore,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hostelId = data['hostelId'] as String?;
     final roomName = data['roomName'] ?? 'Room';
-    final status = data['status'] ?? 'active';
-    final isActive = status == 'confirmed' || status == 'active';
+    final status = data['status'] ?? 'confirmed';
+    final isActive = status != 'cancelled';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isActive ? _kGreenLight : Colors.grey[300]!,
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.horizontal(
-              left: Radius.circular(10),
+    final bookingId = docId;
+    final paymentReference = data['paymentReference'] ?? '';
+    final isCancelled = status == 'cancelled';
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: hostelId != null
+          ? firestore.collection('hostels').doc(hostelId).get()
+          : null,
+      builder: (context, snap) {
+        final hostelData = snap.data?.data() as Map<String, dynamic>?;
+        final hostelName = hostelData?['name'] ?? 'Hostel';
+        final imageUrl = hostelData?['imageUrl'] as String?;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isActive ? _kGreenLight : Colors.grey[300]!,
+              width: 1.5,
             ),
             child: (imageUrl != null && imageUrl!.isNotEmpty)
                 ? Image.network(
@@ -1293,72 +1342,103 @@ class _BookingTile extends StatelessWidget {
                   )
                 : _placeholderImage(),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ================= ROW =================
+              Row(
                 children: [
-                  Text(
-                    hostelName,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: _kDark,
+                  ClipRRect(
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(10),
+                    ),
+                    child: imageUrl != null
+                        ? Image.network(
+                            imageUrl,
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            width: 72,
+                            height: 72,
+                            color: _kGreenPale,
+                            child: Icon(
+                              Icons.hotel_rounded,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            hostelName,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: _kDark,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            roomName,
+                            style: const TextStyle(
+                              color: _kGreyText,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  // ── FIX: "Room" label is now the room number / name ───────
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.meeting_room_outlined,
-                        size: 12,
-                        color: _kGreyText,
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        roomName,
-                        style: const TextStyle(color: _kGreyText, fontSize: 12),
+                      decoration: BoxDecoration(
+                        color: isActive ? _kGreenPale : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
+                      child: Text(
+                        status,
+                        style: TextStyle(
+                          color: isActive ? AppTheme.primaryColor : _kGreyText,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isActive ? _kGreenPale : Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                status,
-                style: TextStyle(
-                  color: isActive ? AppTheme.primaryColor : _kGreyText,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _placeholderImage() {
-    return Container(
-      width: 72,
-      height: 72,
-      color: _kGreenPale,
-      child: const Icon(Icons.hotel_rounded, color: AppTheme.primaryColor),
-    );
-  }
-}
+              const SizedBox(height: 12),
+
+              CancelButton(
+                bookingId: bookingId,
+                paymentReference: paymentReference,
+                isCancelled: isCancelled,
+                hostelName: hostelName,
+                roomName: roomName,
+                imageUrl: data['imageUrl'] ?? '',
+                amount: (data['amount'] ?? 0).toDouble(),
+                createdAt: (data['createdAt'] as Timestamp).toDate(),
+              ),
+            ],
+          ),
+        );
+      }, // <-- closes FutureBuilder builder
+    ); // <-- closes FutureBuilder
+  } // <-- closes build method
+} // <-- closes _BookingTile class
 
 class _LoadingCard extends StatelessWidget {
   const _LoadingCard();
