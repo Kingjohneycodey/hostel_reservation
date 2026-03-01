@@ -394,7 +394,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                                                     ),
                                                   ),
                                                   child: Text(
-                                                    'Book (\₦${data['customPrice'] ?? _selectedRoomTypeData?['price'] ?? 1000})',
+                                                    'Book (₦${data['customPrice'] ?? _selectedRoomTypeData?['price'] ?? 1000})',
                                                     style: const TextStyle(
                                                       fontSize: 10,
                                                       fontWeight:
@@ -515,7 +515,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                       ),
                       child: Text(
                         currentUser != null
-                            ? 'Book Now - \₦${_selectedRoomData!['customPrice'] ?? _selectedRoomTypeData?['price'] ?? 1000}'
+                            ? 'Book Now - ₦${_selectedRoomData!['customPrice'] ?? _selectedRoomTypeData?['price'] ?? 1000}'
                             : 'Login to Book',
                         style: const TextStyle(
                           fontSize: 18,

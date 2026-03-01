@@ -16,6 +16,7 @@ import 'package:hostel_reservation/registration_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
+  final isAdminAuth = ref.watch(adminAuthProvider);
 
   return GoRouter(
     initialLocation: '/',
@@ -23,12 +24,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoading = authState.isLoading;
       final hasError = authState.hasError;
       final isAuth = authState.asData?.value != null;
+      final path = state.uri.toString();
 
-      final isSplash = state.uri.toString() == '/';
-      final isLogin = state.uri.toString() == '/signin';
-      final isRegister = state.uri.toString() == '/register';
+      final isSplash = path == '/';
+      final isLogin = path == '/signin';
+      final isRegister = path == '/register';
+      final isAdmin = path.startsWith('/admin');
 
       if (isLoading || hasError) return null;
+
+      // Admin is authenticated via unique key — let them through /admin/* freely
+      if (isAdminAuth && isAdmin) return null;
+      // Admin trying to access other pages → push to admin dashboard
+      if (isAdminAuth && (isSplash || isLogin || isRegister)) {
+        return '/admin/hostels';
+      }
 
       if (isSplash) {
         return isAuth ? '/hostels' : '/signin';
@@ -38,6 +48,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return isAuth ? '/hostels' : null;
       }
 
+      // Block unauthenticated users from admin and other protected routes
       if (!isAuth) {
         return '/signin';
       }

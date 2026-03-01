@@ -116,7 +116,7 @@ class _ManageHostelsScreenState extends State<ManageHostelsScreen> {
                               child: Image.asset(
                                 'assets/images/hostel${(index % 6) + 1}.jpeg',
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => _placeholder(),
+                                errorBuilder: (_, _, _) => _placeholder(),
                               ),
                             ),
                             Padding(
