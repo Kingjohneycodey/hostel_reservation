@@ -270,7 +270,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                           return DropdownMenuItem<String>(
                             value: type['id'],
                             child: Text(
-                              '${type['name']} (Max: ${type['capacity']}, \₦${type['price']})',
+                              '${type['name']} (Max: ${type['capacity']}, ₦${type['price']})',
                               overflow: TextOverflow.ellipsis,
                             ),
                           );
